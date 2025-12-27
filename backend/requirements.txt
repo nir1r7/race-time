@@ -4,7 +4,12 @@ uvicorn[standard]>=0.32.0
 pydantic>=2.9.0
 
 # Database
+databases[asyncpg]>=0.9.0
 psycopg2-binary>=2.9.9
+asyncpg>=0.30.0
+
+# Environment
+python-dotenv>=1.0.1
 
 # Cache/Queue
 redis>=5.2.0

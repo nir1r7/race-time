@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.api.routes import events
-from app.db import connect_db, disconnect_db
+from app.db import database
 
 
 app = FastAPI(title="EventRelay")
@@ -13,8 +13,8 @@ def health():
 
 @app.on_event("startup")
 async def startup():
-    await connect_db()
+    await database.connect()
 
 @app.on_event("shutdown")
 async def shutdown():
-    await disconnect_db()
+    await database.disconnect()
