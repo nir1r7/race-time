@@ -1,23 +1,21 @@
+"""RaceTime FastAPI application."""
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
-from app.api.routes import events
-from app.db import database
-
-app = FastAPI(title="EventRelay")
-
-app.include_router(events.router)
+from app import redis_store
+from app.routes import router
 
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifecycle."""
+    yield
+    # Cleanup on shutdown
+    await redis_store.close_client()
 
 
-@app.on_event("startup")
-async def startup():
-    await database.connect()
+app = FastAPI(title="RaceTime", lifespan=lifespan)
 
-
-@app.on_event("shutdown")
-async def shutdown():
-    await database.disconnect()
+# Include API routes
+app.include_router(router)

@@ -23,6 +23,7 @@ lint.ignore = [
 
 # Never lint generated or external code
 exclude = [
-    "alembic/versions",
     "venv",
+    ".venv",
+    "__pycache__",
 ]

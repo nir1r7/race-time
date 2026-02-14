@@ -4,31 +4,22 @@ uvicorn[standard]>=0.32.1
 pydantic>=2.10.3
 pydantic-settings>=2.7.0
 
-# Database
-databases[asyncpg]>=0.9.0
-psycopg2-binary>=2.9.10
-asyncpg>=0.30.0
-alembic>=1.14.0
-sqlalchemy>=2.0.36
-
 # Environment
 python-dotenv>=1.0.1
 
-# Cache/Queue
+# Cache & Storage
 redis>=5.2.1
 hiredis>=3.0.0
+
+# HTTP Client
+httpx>=0.28.1
 
 # Monitoring
 prometheus-client>=0.21.0
 
 # Utilities
 python-multipart>=0.0.20
-httpx>=0.28.1
 email-validator>=2.2.0
-
-# Security
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
 
 # Rate Limiting
 slowapi>=0.1.9
