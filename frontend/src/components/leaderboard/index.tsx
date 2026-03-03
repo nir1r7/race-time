@@ -1,4 +1,5 @@
 import { LeaderBoardEntry } from "../../types";
+import "../../static/styles/leaderboard.css";
 
 type Props = {
     entries: LeaderBoardEntry[];
@@ -6,7 +7,7 @@ type Props = {
 
 function Leaderboard({ entries }: Props) {
     return (
-        <table>
+        <table className="leaderboard">
             <thead>
                 <tr>
                     <th>Pos</th>

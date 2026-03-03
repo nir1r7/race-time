@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { fetchLiveSnapshot } from "./api";
 import Circuit from './components/circuit'
 import Leaderboard from './components/leaderboard'
-import './App.css'
+import './static/styles/app.css'
 
 import { Snapshot } from "./types.ts";
 
@@ -58,11 +58,11 @@ export default function App() {
           {!error && loading && <p>Loading...</p>}
           {!error && isStale && <p>Warning: Data is stale (&gt;5s old)</p>}
           {!error && !loading && snapshot && (
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <div style={{ flex: '0 0 30%' }}>
+            <div className="live-layout">
+              <div className="live-layout__leaderboard">
                 <Leaderboard entries={snapshot.leaderboard} />
               </div>
-              <div style={{ flex: 1 }}>
+              <div className="live-layout__circuit">
                 <Circuit positions={snapshot.positions} />
               </div>
             </div>

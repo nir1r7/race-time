@@ -1,0 +1,19 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.live-layout {
+  display: flex;
+  gap: 1rem;
+}
+
+.live-layout__leaderboard {
+  flex: 0 0 40%;
+}
+
+.live-layout__circuit {
+  flex: 1;
+}

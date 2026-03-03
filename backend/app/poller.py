@@ -58,9 +58,42 @@ DUMMY_COMPOUNDS = ["S", "M", "H"]
 
 _shutdown = False
 
-# In-memory state: driver_number -> (x_norm, y_norm)
-# This avoids "teleporting" positions every tick.
-_driver_state: Dict[int, Tuple[float, float]] = {}
+# In-memory state: driver_number -> t (perimeter progress, 0.0 to 1.0)
+_driver_state: Dict[int, float] = {}
+
+# Perimeter parameterisation — must match frontend circuit dimensions (720 x 480).
+# Each segment's share of the total perimeter: 2*(720+480) = 2400px.
+_W, _H = 720, 480
+_P = 2 * (_W + _H)
+_SEG_TOP    = _W / _P          # 0.300  top edge
+_SEG_RIGHT  = _H / _P          # 0.200  right edge
+_SEG_BOTTOM = _W / _P          # 0.300  bottom edge
+# _SEG_LEFT = _H / _P          # 0.200  left edge (remainder)
+
+# Cumulative breakpoints for each corner (clockwise from top-left)
+_B1 = _SEG_TOP                           # 0.30
+_B2 = _SEG_TOP + _SEG_RIGHT              # 0.50
+_B3 = _SEG_TOP + _SEG_RIGHT + _SEG_BOTTOM  # 0.80
+
+
+def _t_to_xy(t: float) -> Tuple[float, float]:
+    """Convert perimeter progress t [0, 1) to (x_norm, y_norm).
+
+    Clockwise from top-left:
+      top    edge: x 0→1, y=1
+      right  edge: x=1,   y 1→0
+      bottom edge: x 1→0, y=0
+      left   edge: x=0,   y 0→1
+    """
+    t = t % 1.0
+    if t < _B1:
+        return t / _SEG_TOP, 1.0
+    elif t < _B2:
+        return 1.0, 1.0 - (t - _B1) / _SEG_RIGHT
+    elif t < _B3:
+        return 1.0 - (t - _B2) / _SEG_BOTTOM, 0.0
+    else:
+        return 0.0, (t - _B3) / (1.0 - _B3)
 
 
 def _handle_signal(sig, frame):
@@ -77,52 +110,29 @@ def _utc_now_iso() -> str:
 
 
 def _init_state_if_needed() -> None:
-    """Initialize positions the first time we run."""
+    """Initialize t values spread evenly around the perimeter."""
     global _driver_state
     if _driver_state:
         return
 
-    # Spread drivers around the unit square deterministically-ish.
-    # Using a simple pattern keeps the first render stable.
     for idx, (num, _) in enumerate(DUMMY_DRIVERS):
-        x = (idx / len(DUMMY_DRIVERS)) % 1.0
-        y = ((idx * 7) / len(DUMMY_DRIVERS)) % 1.0
-        _driver_state[num] = (x, y)
+        _driver_state[num] = idx / len(DUMMY_DRIVERS)
 
 
-def _step_position(x: float, y: float, dx: float, dy: float) -> Tuple[float, float]:
-    """Move a point slightly and wrap around [0, 1)."""
-    x = (x + dx) % 1.0
-    y = (y + dy) % 1.0
-    return x, y
-
-
-def _generate_dummy_snapshot(tick: int) -> Snapshot:
-    """
-    Generate a fake snapshot with smoothly changing positions.
-
-    Args:
-        tick: monotonically increasing tick counter for deterministic motion.
-    """
+def _generate_dummy_snapshot() -> Snapshot:
+    """Generate a fake snapshot with drivers moving around the circuit perimeter."""
     _init_state_if_needed()
     now = _utc_now_iso()
 
-    # Create a consistent, smooth movement pattern:
-    # - everyone moves a bit each tick
-    # - slight per-driver variation based on driver_number
     positions = []
     for num, code in DUMMY_DRIVERS:
-        x, y = _driver_state[num]
-
-        # Small deterministic deltas; avoids random teleporting.
-        # Keep deltas tiny so movement looks realistic-ish.
+        # Advance t; small per-driver variance creates natural gaps.
         base = (num % 10) / 10000.0  # 0.0000 .. 0.0009
-        dx = 0.0020 + base
-        dy = 0.0015 + ((tick % 5) / 10000.0)
+        dt = 0.0020 + base
+        t = (_driver_state[num] + dt) % 1.0
+        _driver_state[num] = t
 
-        x, y = _step_position(x, y, dx, dy)
-        _driver_state[num] = (x, y)
-
+        x, y = _t_to_xy(t)
         positions.append(
             DriverPosition(
                 driver_number=num,
@@ -132,19 +142,18 @@ def _generate_dummy_snapshot(tick: int) -> Snapshot:
             )
         )
 
-    # Dummy leaderboard:
-    # Keep it stable and derived from x position so it "feels" connected to movement.
-    # Sort descending by x_norm (arbitrary but deterministic).
-    ordered = sorted(positions, key=lambda p: p.x_norm, reverse=True)
+    # Leaderboard: sort by t descending (highest t = furthest around the lap).
+    ordered = sorted(DUMMY_DRIVERS, key=lambda item: _driver_state[item[0]], reverse=True)
+    leader_t = _driver_state[ordered[0][0]]
     leaderboard = [
         LeaderboardEntry(
-            position = i + 1,
-            driver_code = p.driver_code,
-            team = DUMMY_TEAMS.get(p.driver_code, "Uknown"),
-            gap_to_leader = round(abs(ordered[0].x_norm - p.x_norm), 3), # will be replaced with time
-            tire_compound = rand.choice(DUMMY_COMPOUNDS), # arbitrary
+            position=i + 1,
+            driver_code=code,
+            team=DUMMY_TEAMS.get(code, "Unknown"),
+            gap_to_leader=round((leader_t - _driver_state[num]) % 1.0, 3),
+            tire_compound=rand.choice(DUMMY_COMPOUNDS),
         )
-        for i, p in enumerate(ordered)
+        for i, (num, code) in enumerate(ordered)
     ]
 
     session = SessionInfo(
@@ -171,16 +180,14 @@ async def poll_loop():
 
     logger.info("Redis connected, starting poll loop...")
 
-    tick = 0
     while not _shutdown:
         try:
-            snapshot = _generate_dummy_snapshot(tick=tick)
+            snapshot = _generate_dummy_snapshot()
             await redis_store.set_snapshot(snapshot.model_dump())
             logger.info("Wrote snapshot (timestamp=%s)", snapshot.timestamp)
         except Exception as e:
             logger.exception("Error writing snapshot: %s", e)
 
-        tick += 1
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
     logger.info("Poll loop stopped")

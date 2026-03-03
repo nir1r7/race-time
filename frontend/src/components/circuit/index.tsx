@@ -1,4 +1,5 @@
 import { DriverPosition } from "../../types";
+import "../../static/styles/circuit.css";
 
 type Props = {
     positions: DriverPosition[];
@@ -6,10 +7,19 @@ type Props = {
 
 function Circuit({ positions }: Props) {
     return (
-        <div>
-            <p>Circuit visualization coming soon</p>
+        <div className="circuit-track">
             {positions.map((p) => (
-                <span key={p.driver_number}>{p.driver_code} </span>
+                <div
+                    key={p.driver_number}
+                    className="circuit-dot"
+                    title={`${p.driver_code} (${p.x_norm.toFixed(2)}, ${p.y_norm.toFixed(2)})`}
+                    style={{
+                        left: `${p.x_norm * 100}%`,
+                        top: `${(1 - p.y_norm) * 100}%`,
+                    }}
+                >
+                    {p.driver_code}
+                </div>
             ))}
         </div>
     );

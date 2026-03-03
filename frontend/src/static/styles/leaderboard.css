@@ -1,0 +1,14 @@
+.leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.leaderboard th,
+.leaderboard td {
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.leaderboard thead tr {
+  border-bottom: 1px solid #444;
+}
