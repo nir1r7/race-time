@@ -8,6 +8,7 @@ import logging
 import signal
 from datetime import datetime, timezone
 from typing import Dict, Tuple
+import random as rand
 
 from app import redis_store
 from app.config import POLL_INTERVAL_SECONDS
@@ -39,6 +40,21 @@ DUMMY_DRIVERS = [
     (22, "TSU"),
     (3, "RIC"),
 ]
+
+DUMMY_TEAMS = {
+    "VER": "Red Bull", "PER": "Red Bull",
+    "HAM": "Mercedes", "RUS": "Mercedes",
+    "LEC": "Ferrari", "SAI": "Ferrari",
+    "NOR": "McLaren", "PIA": "McLaren",
+    "ALO": "Aston Martin", "STR": "Aston Martin",
+    "GAS": "Alpine", "OCO": "Alpine",
+    "ALB": "Williams", "SAR": "Williams",
+    "BOT": "Alfa Romeo", "ZHO": "Alfa Romeo",
+    "MAG": "Haas", "HUL": "Haas",
+    "TSU": "AlphaTauri", "RIC": "AlphaTauri",
+}
+
+DUMMY_COMPOUNDS = ["S", "M", "H"]
 
 _shutdown = False
 
@@ -122,9 +138,11 @@ def _generate_dummy_snapshot(tick: int) -> Snapshot:
     ordered = sorted(positions, key=lambda p: p.x_norm, reverse=True)
     leaderboard = [
         LeaderboardEntry(
-            position=i + 1,
-            driver_number=p.driver_number,
-            driver_code=p.driver_code,
+            position = i + 1,
+            driver_code = p.driver_code,
+            team = DUMMY_TEAMS.get(p.driver_code, "Uknown"),
+            gap_to_leader = round(abs(ordered[0].x_norm - p.x_norm), 3), # will be replaced with time
+            tire_compound = rand.choice(DUMMY_COMPOUNDS), # arbitrary
         )
         for i, p in enumerate(ordered)
     ]

@@ -1,35 +1,74 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useState, useEffect } from 'react'
+import { fetchLiveSnapshot } from "./api";
+import Circuit from './components/circuit'
+import Leaderboard from './components/leaderboard'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+import { Snapshot } from "./types.ts";
+
+export default function App() {
+  const [isLive, setIsLive] = useState<boolean>(false);
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isStale =
+    snapshot !== null &&
+    Date.now() - new Date(snapshot.timestamp).getTime() > 5000;
+
+  useEffect(() => {
+    if (!isLive) {
+      setSnapshot(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const id = setInterval(async () => {
+      try {
+        const data = await fetchLiveSnapshot();
+        if (data) {
+          setSnapshot(data);
+          setLoading(false);
+          setError(null);
+        }
+        // null return (503 — no snapshot yet) keeps loading state active
+      } catch {
+        setError("Failed to reach the API");
+        setLoading(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [isLive]);
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>I'm the goat</h1>
+      this is the start of something great
+      <br />
+      <button onClick={() => setIsLive(!isLive)}>{isLive ? 'Stop' : 'Live'}</button>
+
+      {isLive && (
+        <>
+          {error && <p>Error: {error}</p>}
+          {!error && loading && <p>Loading...</p>}
+          {!error && isStale && <p>Warning: Data is stale (&gt;5s old)</p>}
+          {!error && !loading && snapshot && (
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ flex: '0 0 30%' }}>
+                <Leaderboard entries={snapshot.leaderboard} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <Circuit positions={snapshot.positions} />
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </>
   )
 }
-
-export default App

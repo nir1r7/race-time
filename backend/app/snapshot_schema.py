@@ -17,8 +17,10 @@ class LeaderboardEntry(BaseModel):
     """Leaderboard position."""
 
     position: int
-    driver_number: int
     driver_code: str
+    team: str
+    gap_to_leader: float
+    tire_compound: str
 
 
 class SessionInfo(BaseModel):
