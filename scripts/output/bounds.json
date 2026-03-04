@@ -1,0 +1,436 @@
+{
+  "63": {
+    "circuit_short_name": "Sakhir",
+    "session_key": 9472,
+    "x_min": -577,
+    "x_max": 7497,
+    "y_min": -3500,
+    "y_max": 8347
+  },
+  "149": {
+    "circuit_short_name": "Jeddah",
+    "session_key": 9480,
+    "x_min": -5795,
+    "x_max": 25,
+    "y_min": -5641,
+    "y_max": 21797
+  },
+  "10": {
+    "circuit_short_name": "Melbourne",
+    "session_key": 9488,
+    "x_min": -7210,
+    "x_max": 7503,
+    "y_min": -5563,
+    "y_max": 11852
+  },
+  "46": {
+    "circuit_short_name": "Suzuka",
+    "session_key": 9496,
+    "x_min": -13707,
+    "x_max": 6051,
+    "y_min": -7307,
+    "y_max": 2834
+  },
+  "49": {
+    "circuit_short_name": "Shanghai",
+    "session_key": 9673,
+    "x_min": -6748,
+    "x_max": 5402,
+    "y_min": -3626,
+    "y_max": 7188
+  },
+  "151": {
+    "circuit_short_name": "Miami",
+    "session_key": 9507,
+    "x_min": -4419,
+    "x_max": 10566,
+    "y_min": -4794,
+    "y_max": 1080
+  },
+  "6": {
+    "circuit_short_name": "Imola",
+    "session_key": 9515,
+    "x_min": -14916,
+    "x_max": 3190,
+    "y_min": -10396,
+    "y_max": -359
+  },
+  "22": {
+    "circuit_short_name": "Monte Carlo",
+    "session_key": 9523,
+    "x_min": -7681,
+    "x_max": -185,
+    "y_min": -9773,
+    "y_max": -168
+  },
+  "23": {
+    "circuit_short_name": "Montreal",
+    "session_key": 9531,
+    "x_min": -2449,
+    "x_max": 3886,
+    "y_min": -2272,
+    "y_max": 16759
+  },
+  "15": {
+    "circuit_short_name": "Catalunya",
+    "session_key": 9539,
+    "x_min": -6733,
+    "x_max": 2886,
+    "y_min": -7455,
+    "y_max": 4139
+  },
+  "19": {
+    "circuit_short_name": "Spielberg",
+    "session_key": 9550,
+    "x_min": -8234,
+    "x_max": 4245,
+    "y_min": -2244,
+    "y_max": 5680
+  },
+  "2": {
+    "circuit_short_name": "Silverstone",
+    "session_key": 9558,
+    "x_min": -2315,
+    "x_max": 7790,
+    "y_min": -4117,
+    "y_max": 13115
+  },
+  "4": {
+    "circuit_short_name": "Hungaroring",
+    "session_key": 9566,
+    "x_min": -6085,
+    "x_max": 4550,
+    "y_min": -1493,
+    "y_max": 10557
+  },
+  "7": {
+    "circuit_short_name": "Spa-Francorchamps",
+    "session_key": 9574,
+    "x_min": -4336,
+    "x_max": 8314,
+    "y_min": -15770,
+    "y_max": 4548
+  },
+  "55": {
+    "circuit_short_name": "Zandvoort",
+    "session_key": 9582,
+    "x_min": -1015,
+    "x_max": 8703,
+    "y_min": -1606,
+    "y_max": 6702
+  },
+  "39": {
+    "circuit_short_name": "Monza",
+    "session_key": 9590,
+    "x_min": -1500,
+    "x_max": 11067,
+    "y_min": -5801,
+    "y_max": 15883
+  },
+  "144": {
+    "circuit_short_name": "Baku",
+    "session_key": 9598,
+    "x_min": -16908,
+    "x_max": 3724,
+    "y_min": -11137,
+    "y_max": 3690
+  },
+  "61": {
+    "circuit_short_name": "Singapore",
+    "session_key": 9606,
+    "x_min": -13225,
+    "x_max": 1170,
+    "y_min": -4906,
+    "y_max": 4089
+  },
+  "9": {
+    "circuit_short_name": "Austin",
+    "session_key": 9617,
+    "x_min": -2552,
+    "x_max": 15581,
+    "y_min": -4073,
+    "y_max": 6436
+  },
+  "65": {
+    "circuit_short_name": "Mexico City",
+    "session_key": 9625,
+    "x_min": -2432,
+    "x_max": 12013,
+    "y_min": -9041,
+    "y_max": 1286
+  },
+  "150": {
+    "circuit_short_name": "Lusail",
+    "session_key": 9655,
+    "x_min": -4472,
+    "x_max": 8047,
+    "y_min": -4616,
+    "y_max": 10053
+  },
+  "70": {
+    "circuit_short_name": "Yas Marina Circuit",
+    "session_key": 9662,
+    "x_min": -2196,
+    "x_max": 5796,
+    "y_min": -5345,
+    "y_max": 11774
+  },
+  "14": {
+    "circuit_short_name": "Interlagos",
+    "session_key": 9636,
+    "x_min": -4141,
+    "x_max": 2404,
+    "y_min": -8518,
+    "y_max": 1887
+  },
+  "152": {
+    "circuit_short_name": "Las Vegas",
+    "session_key": 9644,
+    "x_min": -7734,
+    "x_max": 3877,
+    "y_min": -1722,
+    "y_max": 17774
+  },
+  "63": {
+    "circuit_short_name": "Sakhir",
+    "session_key": 9472,
+    "x_min": -577,
+    "x_max": 7497,
+    "y_min": -3500,
+    "y_max": 8347,
+    "scale": 0.08441,
+    "x_offset": 159.239,
+    "y_offset": 0.0
+  },
+  "149": {
+    "circuit_short_name": "Jeddah",
+    "session_key": 9480,
+    "x_min": -5795,
+    "x_max": 25,
+    "y_min": -5641,
+    "y_max": 21797,
+    "scale": 0.036446,
+    "x_offset": 393.943,
+    "y_offset": 0.0
+  },
+  "10": {
+    "circuit_short_name": "Melbourne",
+    "session_key": 9488,
+    "x_min": -7210,
+    "x_max": 7503,
+    "y_min": -5563,
+    "y_max": 11852,
+    "scale": 0.057422,
+    "x_offset": 77.577,
+    "y_offset": 0.0
+  },
+  "46": {
+    "circuit_short_name": "Suzuka",
+    "session_key": 9496,
+    "x_min": -13707,
+    "x_max": 6051,
+    "y_min": -7307,
+    "y_max": 2834,
+    "scale": 0.050612,
+    "x_offset": 0.0,
+    "y_offset": 243.37
+  },
+  "49": {
+    "circuit_short_name": "Shanghai",
+    "session_key": 9673,
+    "x_min": -6748,
+    "x_max": 5402,
+    "y_min": -3626,
+    "y_max": 7188,
+    "scale": 0.082305,
+    "x_offset": 0.0,
+    "y_offset": 54.979
+  },
+  "151": {
+    "circuit_short_name": "Miami",
+    "session_key": 9507,
+    "x_min": -4419,
+    "x_max": 10566,
+    "y_min": -4794,
+    "y_max": 1080,
+    "scale": 0.066733,
+    "x_offset": 0.0,
+    "y_offset": 304.004
+  },
+  "6": {
+    "circuit_short_name": "Imola",
+    "session_key": 9515,
+    "x_min": -14916,
+    "x_max": 3190,
+    "y_min": -10396,
+    "y_max": -359,
+    "scale": 0.05523,
+    "x_offset": 0.0,
+    "y_offset": 222.827
+  },
+  "22": {
+    "circuit_short_name": "Monte Carlo",
+    "session_key": 9523,
+    "x_min": -7681,
+    "x_max": -185,
+    "y_min": -9773,
+    "y_max": -168,
+    "scale": 0.104112,
+    "x_offset": 109.787,
+    "y_offset": 0.0
+  },
+  "23": {
+    "circuit_short_name": "Montreal",
+    "session_key": 9531,
+    "x_min": -2449,
+    "x_max": 3886,
+    "y_min": -2272,
+    "y_max": 16759,
+    "scale": 0.052546,
+    "x_offset": 333.561,
+    "y_offset": 0.0
+  },
+  "15": {
+    "circuit_short_name": "Catalunya",
+    "session_key": 9539,
+    "x_min": -6733,
+    "x_max": 2886,
+    "y_min": -7455,
+    "y_max": 4139,
+    "scale": 0.086252,
+    "x_offset": 85.173,
+    "y_offset": -0.0
+  },
+  "19": {
+    "circuit_short_name": "Spielberg",
+    "session_key": 9550,
+    "x_min": -8234,
+    "x_max": 4245,
+    "y_min": -2244,
+    "y_max": 5680,
+    "scale": 0.080135,
+    "x_offset": 0.0,
+    "y_offset": 182.507
+  },
+  "2": {
+    "circuit_short_name": "Silverstone",
+    "session_key": 9558,
+    "x_min": -2315,
+    "x_max": 7790,
+    "y_min": -4117,
+    "y_max": 13115,
+    "scale": 0.058032,
+    "x_offset": 206.795,
+    "y_offset": 0.0
+  },
+  "4": {
+    "circuit_short_name": "Hungaroring",
+    "session_key": 9566,
+    "x_min": -6085,
+    "x_max": 4550,
+    "y_min": -1493,
+    "y_max": 10557,
+    "scale": 0.082988,
+    "x_offset": 58.714,
+    "y_offset": 0.0
+  },
+  "7": {
+    "circuit_short_name": "Spa-Francorchamps",
+    "session_key": 9574,
+    "x_min": -4336,
+    "x_max": 8314,
+    "y_min": -15770,
+    "y_max": 4548,
+    "scale": 0.049217,
+    "x_offset": 188.7,
+    "y_offset": 0.0
+  },
+  "55": {
+    "circuit_short_name": "Zandvoort",
+    "session_key": 9582,
+    "x_min": -1015,
+    "x_max": 8703,
+    "y_min": -1606,
+    "y_max": 6702,
+    "scale": 0.102902,
+    "x_offset": 0.0,
+    "y_offset": 72.546
+  },
+  "39": {
+    "circuit_short_name": "Monza",
+    "session_key": 9590,
+    "x_min": -1500,
+    "x_max": 11067,
+    "y_min": -5801,
+    "y_max": 15883,
+    "scale": 0.046117,
+    "x_offset": 210.224,
+    "y_offset": 0.0
+  },
+  "9": {
+    "circuit_short_name": "Austin",
+    "session_key": 9617,
+    "x_min": -2553,
+    "x_max": 15581,
+    "y_min": -4073,
+    "y_max": 6437,
+    "scale": 0.055145,
+    "x_offset": 0.0,
+    "y_offset": 210.213
+  },
+  "65": {
+    "circuit_short_name": "Mexico City",
+    "session_key": 9625,
+    "x_min": -2432,
+    "x_max": 12013,
+    "y_min": -9041,
+    "y_max": 1286,
+    "scale": 0.069228,
+    "x_offset": -0.0,
+    "y_offset": 142.541
+  },
+  "14": {
+    "circuit_short_name": "Interlagos",
+    "session_key": 9636,
+    "x_min": -4141,
+    "x_max": 2404,
+    "y_min": -8518,
+    "y_max": 1887,
+    "scale": 0.096108,
+    "x_offset": 185.488,
+    "y_offset": 0.0
+  },
+  "152": {
+    "circuit_short_name": "Las Vegas",
+    "session_key": 9644,
+    "x_min": -7734,
+    "x_max": 3877,
+    "y_min": -1722,
+    "y_max": 17774,
+    "scale": 0.051293,
+    "x_offset": 202.221,
+    "y_offset": 0.0
+  },
+  "150": {
+    "circuit_short_name": "Lusail",
+    "session_key": 9655,
+    "x_min": -4472,
+    "x_max": 8047,
+    "y_min": -4616,
+    "y_max": 10053,
+    "scale": 0.068171,
+    "x_offset": 73.284,
+    "y_offset": 0.0
+  },
+  "70": {
+    "circuit_short_name": "Yas Marina Circuit",
+    "session_key": 9662,
+    "x_min": -2196,
+    "x_max": 5796,
+    "y_min": -5345,
+    "y_max": 11774,
+    "scale": 0.058415,
+    "x_offset": 266.575,
+    "y_offset": 0.0
+  }
+}

@@ -114,9 +114,9 @@ Every 500ms the worker merges in-memory state into one compact `live:snapshot` J
 - [x] Dummy poller service (generates fake race data)
 
 ### Phase 2 — React frontend
-- [ ] Track visualization component
-- [ ] Leaderboard component
-- [ ] API polling integration
+- [x] Track visualization component
+- [x] Leaderboard component
+- [x] API polling integration
 - [ ] Stale-data and no-active-session UI states
 
 ### Phase 3 — Kubernetes deployment
