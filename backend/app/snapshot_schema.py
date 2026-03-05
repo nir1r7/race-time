@@ -1,9 +1,9 @@
 """Phase 1 Snapshot Schema - Minimal contract for poller -> Redis -> API."""
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-
+# Backend data models for requests and responses
 class DriverPosition(BaseModel):
     """Driver position on track (normalized 0-1 coordinates)."""
 
@@ -11,6 +11,7 @@ class DriverPosition(BaseModel):
     driver_code: str
     x_norm: float  # 0.0 to 1.0
     y_norm: float  # 0.0 to 1.0
+    trail: list[tuple[float, float]] = Field(default_factory = list)
 
 
 class LeaderboardEntry(BaseModel):

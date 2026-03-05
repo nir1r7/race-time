@@ -4,6 +4,7 @@ export type DriverPosition = {
     driver_code: string;
     x_norm: number;
     y_norm: number;
+    trail?: [number, number][];
 }
 
 export type LeaderBoardEntry = {
@@ -17,6 +18,7 @@ export type LeaderBoardEntry = {
 export type SessionInfo = {
     name: string;
     circuit: string;
+    session_key?: number;
 }
 
 export type Snapshot = {

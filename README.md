@@ -7,40 +7,65 @@ A full-stack "live race day" F1 application that displays real-time race data, c
 RaceTime sources data from [OpenF1](https://openf1.org) and provides:
 - Live track view with car positions
 - Real-time leaderboard (P1-P20)
-- Near real-time updates via cached data
+- Smooth car movement via a client-side playback buffer
 
-The app supports two ingest modes. During development and on the free OpenF1 tier, a **dummy poller** generates fake race data. With a premium (sponsor) OpenF1 subscription, a **stream worker** connects to OpenF1's MQTT broker for true real-time data during live sessions.
+The app supports two ingest modes. During development, a **dummy poller** generates fake race data. With a premium (sponsor) OpenF1 subscription, an **MQTT worker** connects to OpenF1's MQTT broker for true real-time GPS data at ~3.7 Hz per car.
 
-In both modes the downstream contract is identical: a single `live:snapshot` key in Redis, read by stateless API replicas and polled by the frontend.
+In both modes the downstream contract is identical: a Redis queue of the 5 most recent snapshots, consumed by stateless API replicas and streamed to the browser via SSE.
 
 ## Architecture
 
 ### Services
 
-- `api` (replicas=3): Stateless FastAPI service that reads cached snapshots from Redis and serves them to frontend clients
-- `frontend`: React Vite SPA that polls the API and renders track visualization + leaderboard
-- `redis`: Shared cache and source of truth for snapshot data
+- `api` (replicas=3): Stateless FastAPI service. Polls Redis every 100ms and streams snapshots to connected browsers via SSE (`/api/live/stream`).
+- `frontend`: React Vite SPA. Opens an `EventSource` connection to the SSE endpoint, buffers received snapshots in a local playback queue, and renders them oldest-first for smooth car movement.
+- `redis`: Shared cache and source of truth. Stores a rolling queue of the **5 most recent snapshots** (`LPUSH` + `LTRIM`). Acts as the handoff point between the ingest worker and the API, and provides reconnection resilience — new clients receive the last 5 snapshots immediately on connect.
 
 **Ingest (one of):**
 
-- `poller` (replicas=1) — **Dummy / free tier**: Generates fake race data (or polls OpenF1 REST) every 1s and writes `live:snapshot` to Redis
-- `stream-worker` (replicas=1) — **Premium tier**: Authenticates via OAuth2, subscribes to OpenF1 MQTT topics, assembles race state in memory, and flushes `live:snapshot` to Redis every 500ms. Writes a `live:heartbeat` key with short TTL on each healthy cycle.
+- `poller` (replicas=1) — **Dev / dummy**: Generates fake race data every 1s and pushes to the Redis snapshot queue.
+- `mqtt-worker` (replicas=1) — **Premium tier**: Subscribes to OpenF1's MQTT broker, assembles race state from GPS location messages, normalizes coordinates using pre-built circuit bounds, and flushes a snapshot to Redis on every location update (~3.7 Hz). Enabled via `docker-compose --profile premium`.
 
 ### Data Flow
 
-**Dummy / free tier:**
 ```
-Dummy data (or OpenF1 REST) → poller → Redis → API (replicas=3) → frontend clients
+DATA SOURCE
+  [dev]     dummy poller  →  fake positions every 1s
+  [premium] OpenF1 MQTT broker (mqtt.openf1.org:8883)
+            ~3.7 Hz GPS per car  →  mqtt_worker.py normalizes & assembles
+                      │
+                      ▼ LPUSH + LTRIM
+              ┌──────────────
+              │     REDIS    
+              │  live:snapshots  (list, last 5)       
+              │  • Decouples ingest from API          
+              │  • Survives API restarts              
+              │  • Single source of truth for         
+              │    all API replicas                   
+              └──────────────
+                      │ poll every 100ms, push on change
+                      ▼
+              FastAPI  GET /api/live/stream
+              (SSE — long-lived HTTP, server pushes)
+                      │ text/event-stream
+                      ▼
+              Browser  EventSource
+              • Receives individual snapshots
+              • Buffers last N in playback queue
+              • Renders oldest-first → smooth animation
+              • Auto-reconnects on drop; receives last 5 immediately
 ```
 
-**Premium tier:**
+**Premium switchover:**
+```bash
+MQTT_USERNAME=x MQTT_PASSWORD=y docker-compose --profile premium up
+docker-compose stop poller
 ```
-OpenF1 MQTT → stream-worker → Redis → API (replicas=3) → frontend clients
-```
+Everything downstream (Redis → SSE → browser) is untouched.
 
 ## Premium Architecture
 
-When running with a premium OpenF1 subscription, the stream worker replaces the poller and follows this pipeline:
+When running with a premium OpenF1 subscription, the `mqtt-worker` replaces the dummy poller and follows this pipeline:
 
 ### 1. Authentication
 
@@ -76,11 +101,11 @@ MQTT messages include `_id` and `_key` fields for ordering and deduplication.
 
 ### 5. Snapshot Flush
 
-Every 500ms the worker merges in-memory state into one compact `live:snapshot` JSON and writes it to Redis. The snapshot contains only what the UI needs:
+On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and pushes it to the Redis list (`LPUSH live:snapshots` + `LTRIM` to keep last 5). The snapshot contains:
 - `timestamp`
-- `session`
-- `positions`
-- `leaderboard`
+- `session` (circuit, name, session_key)
+- `positions` — per driver: `driver_number`, `driver_code`, `x_norm`, `y_norm`, plus a `trail` of the last 6 normalized positions (oldest → newest) for smooth frontend animation
+- `leaderboard` — position, gap, team, tyre compound per driver
 
 ### 6. Health Signals
 
@@ -113,29 +138,37 @@ Every 500ms the worker merges in-memory state into one compact `live:snapshot` J
 - [x] Live snapshot API endpoints (`/api/health`, `/api/live/snapshot`)
 - [x] Dummy poller service (generates fake race data)
 
-### Phase 2 — React frontend
+### Phase 2 — React frontend (complete)
 - [x] Track visualization component
 - [x] Leaderboard component
 - [x] API polling integration
-- [ ] Stale-data and no-active-session UI states
 
-### Phase 3 — Kubernetes deployment
+### Phase 3 — Pre-premium architecture
+- [x] Add `trail` field to `DriverPosition` schema (backend + frontend types)
+- [x] `circuit_bounds.py` — GPS normalization using `scripts/output/bounds.json`
+- [x] Redis snapshot queue (LPUSH + LTRIM, last 5) replacing single key
+- [ ] SSE endpoint `GET /api/live/stream` replacing polling
+- [ ] Frontend: swap `setInterval` → `EventSource` with client-side playback queue
+- [ ] `mqtt_worker.py` — full MQTT worker shell (ready for credentials)
+- [ ] Update dummy poller to populate trail data
+- [ ] Docker Compose `premium` profile for `mqtt-worker` service
+
+### Phase 4 — Kubernetes deployment
 - [ ] K8s manifests for all services
 - [ ] Traefik ingress routing
 
-### Phase 4 — CI/CD pipeline
+### Phase 5 — CI/CD pipeline
 - [ ] GitHub Actions workflows
 - [ ] Automated linting, testing, and Docker image builds
 - [ ] GHCR push with semantic tagging
 
-### Phase 5 — Monitoring
+### Phase 6 — Monitoring
 - [ ] Prometheus metrics collection
 - [ ] Grafana dashboards
 
-### Phase 6 — Premium OpenF1 integration
-- [ ] Replace `poller.py` with `stream_worker.py`
-- [ ] OAuth2 token manager (auth, refresh, backoff)
-- [ ] REST bootstrap on startup
+### Phase 7 — Premium OpenF1 (mqtt-worker)
+- [ ] Wire MQTT credentials into `mqtt_worker.py`
+- [ ] REST bootstrap on startup (session, drivers, positions)
 - [ ] MQTT ingest with reconnect logic
 - [ ] `live:heartbeat` key with TTL
 - [ ] Staleness and heartbeat checks in `/api/health`
