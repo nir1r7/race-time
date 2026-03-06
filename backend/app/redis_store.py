@@ -46,11 +46,11 @@ async def set_snapshot(snapshot: dict) -> None:
     # use a pipe in case you want multiple commands processed by redis at the same time
     async with client.pipeline() as pipe:
         pipe.lpush(SNAPSHOT_KEY, json.dumps(snapshot))
-        pipe.ltrim(SNAPSHOT_KEY, 0, 4)
+        pipe.ltrim(SNAPSHOT_KEY, 0, 5)
         await pipe.execute()
 
 
-async def get_snapshot() -> Optional[dict]:
+async def get_latest_snapshot() -> Optional[dict]:
     """Read snapshot from Redis."""
     client = await get_client()
 
@@ -59,7 +59,7 @@ async def get_snapshot() -> Optional[dict]:
         return None
     return json.loads(data)
 
-async def get_recent(n: int) -> list[dict]:
+async def get_last_n_snapshots(n: int) -> list[dict]:
     """Fetch the n most recent snapshots."""
     client = await get_client()
 

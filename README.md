@@ -147,8 +147,8 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [x] Add `trail` field to `DriverPosition` schema (backend + frontend types)
 - [x] `circuit_bounds.py` — GPS normalization using `scripts/output/bounds.json`
 - [x] Redis snapshot queue (LPUSH + LTRIM, last 5) replacing single key
-- [ ] SSE endpoint `GET /api/live/stream` replacing polling
-- [ ] Frontend: swap `setInterval` → `EventSource` with client-side playback queue
+- [x] SSE endpoint `GET /api/live/stream` replacing polling
+- [x] Frontend: swap `setInterval` → `EventSource` with client-side playback queue
 - [ ] `mqtt_worker.py` — full MQTT worker shell (ready for credentials)
 - [ ] Update dummy poller to populate trail data
 - [ ] Docker Compose `premium` profile for `mqtt-worker` service

@@ -1,5 +1,14 @@
 import { LeaderBoardEntry } from "../../types";
+import { TEAM_COLORS } from "../../teamColors";
 import "../../static/styles/leaderboard.css";
+
+const TYRE_COLORS: Record<string, string> = {
+    S: "#E8002D",
+    M: "#FFC906",
+    H: "#EBEBEB",
+    I: "#39B54A",
+    W: "#0067FF",
+};
 
 type Props = {
     entries: LeaderBoardEntry[];
@@ -7,34 +16,53 @@ type Props = {
 
 function Leaderboard({ entries }: Props) {
     return (
-        <table className="leaderboard">
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Driver</th>
-                    <th>Team</th>
-                    <th>Gap</th>
-                    <th>Tyre</th>
-                </tr>
-            </thead>
-            <tbody>
-                {entries.length === 0 ? (
-                    <tr>
-                        <td colSpan={5}>No data</td>
-                    </tr>
-                ) : (
-                    entries.map((entry) => (
-                        <tr key={entry.driver_code}>
-                            <td>{entry.position}</td>
-                            <td>{entry.driver_code}</td>
-                            <td>{entry.team}</td>
-                            <td>{entry.gap_to_leader == null ? "—" : entry.gap_to_leader === 0 ? "LEADER" : `+${entry.gap_to_leader.toFixed(3)}`}</td>
-                            <td>{entry.tire_compound}</td>
+        <div className="leaderboard-wrapper">
+            <div className="leaderboard-header">
+                <span className="leaderboard-header__badge">F1</span>
+                <span className="leaderboard-header__title">Race</span>
+            </div>
+            <table className="leaderboard">
+                <tbody>
+                    {entries.length === 0 ? (
+                        <tr>
+                            <td colSpan={4} className="lb-empty">No data</td>
                         </tr>
-                    ))
-                )}
-            </tbody>
-        </table>
+                    ) : (
+                        entries.map((entry) => (
+                            <tr key={entry.driver_code}>
+                                <td className="lb-pos">{entry.position}</td>
+                                <td className="lb-driver">
+                                    <div className="lb-driver-inner">
+                                        <span
+                                            className="lb-team-bar"
+                                            style={{ backgroundColor: TEAM_COLORS[entry.team] ?? "#888" }}
+                                        />
+                                        <span className="lb-driver-code">{entry.driver_code}</span>
+                                    </div>
+                                </td>
+                                <td className="lb-gap">
+                                    {entry.gap_to_leader == null ? (
+                                        "—"
+                                    ) : entry.gap_to_leader === 0 ? (
+                                        <span className="lb-gap--leader">LEADER</span>
+                                    ) : (
+                                        `+${entry.gap_to_leader.toFixed(3)}`
+                                    )}
+                                </td>
+                                <td className="lb-tyre">
+                                    <span
+                                        className="lb-tyre-badge"
+                                        style={{ backgroundColor: TYRE_COLORS[entry.tire_compound] ?? "#888" }}
+                                    >
+                                        {entry.tire_compound}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+        </div>
     );
 }
 

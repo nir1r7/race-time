@@ -9,8 +9,8 @@ class DriverPosition(BaseModel):
 
     driver_number: int
     driver_code: str
-    x_norm: float  # 0.0 to 1.0
-    y_norm: float  # 0.0 to 1.0
+    x_norm: float  # 0 to 1
+    y_norm: float  # 0 to 1
     trail: list[tuple[float, float]] = Field(default_factory = list)
 
 
@@ -38,7 +38,7 @@ class Snapshot(BaseModel):
     and returned by API to clients.
     """
 
-    timestamp: str  # ISO format
+    timestamp: str  # iso format
     positions: list[DriverPosition]
     leaderboard: list[LeaderboardEntry]
     session: Optional[SessionInfo] = None

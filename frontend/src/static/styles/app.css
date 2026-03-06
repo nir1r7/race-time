@@ -1,19 +1,121 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* ── Reset ───────────────────────────────────────────────── */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 
+#root {
+  height: 100%;
+  background: #0f0f15;
+  display: flex;
+  align-items: stretch;
+}
+
+/* ── App shell ───────────────────────────────────────────── */
+.app {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.5rem;
+  gap: 0.85rem;
+  min-height: 0;
+  box-sizing: border-box;
+  width: 100vw;
+}
+
+/* ── Controls bar ────────────────────────────────────────── */
+.app-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.app-btn {
+  background: #e10600;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 1.25rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.app-btn:hover {
+  background: #ff1a17;
+}
+
+.app-status {
+  font-size: 0.72rem;
+  color: #888;
+}
+
+.app-status--error {
+  color: #e10600;
+}
+
+.app-status--stale {
+  color: #ffc906;
+}
+
+/* ── Live layout ─────────────────────────────────────────── */
 .live-layout {
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+  justify-content: center;
 }
 
 .live-layout__leaderboard {
-  flex: 0 0 40%;
+  flex: 0 0 260px;
+  max-height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  margin-right: 10rem;
+}
+
+.live-layout__leaderboard::-webkit-scrollbar {
+  display: none;
 }
 
 .live-layout__circuit {
-  flex: 1;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* ── Tablet ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .live-layout {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: auto;
+  }
+
+  .live-layout__leaderboard {
+    flex: 0 0 auto;
+    max-height: none;
+    width: 100%;
+  }
+
+  .live-layout__circuit {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .app {
+    padding: 0.75rem;
+    gap: 0.6rem;
+  }
 }

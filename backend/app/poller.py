@@ -7,11 +7,12 @@ import asyncio
 import logging
 import signal
 from datetime import datetime, timezone
-from typing import Dict, Tuple
+from typing import Dict, Optional
 import random as rand
 
 from app import redis_store
-from app.config import POLL_INTERVAL_SECONDS
+from app.circuit_path import CircuitPath
+from app.config import CIRCUIT_SVG_PATH, POLL_INTERVAL_SECONDS
 from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, Snapshot
 
 logging.basicConfig(level=logging.INFO)
@@ -58,47 +59,15 @@ DUMMY_COMPOUNDS = ["S", "M", "H"]
 
 _shutdown = False
 
-# In-memory state: driver_number -> t (perimeter progress, 0.0 to 1.0)
+# In-memory state: driver_number -> t (lap progress, 0.0 to 1.0)
 _driver_state: Dict[int, float] = {}
 
-# Perimeter parameterisation — must match frontend circuit dimensions (720 x 480).
-# Each segment's share of the total perimeter: 2*(720+480) = 2400px.
-_W, _H = 720, 480
-_P = 2 * (_W + _H)
-_SEG_TOP    = _W / _P          # 0.300  top edge
-_SEG_RIGHT  = _H / _P          # 0.200  right edge
-_SEG_BOTTOM = _W / _P          # 0.300  bottom edge
-# _SEG_LEFT = _H / _P          # 0.200  left edge (remainder)
-
-# Cumulative breakpoints for each corner (clockwise from top-left)
-_B1 = _SEG_TOP                           # 0.30
-_B2 = _SEG_TOP + _SEG_RIGHT              # 0.50
-_B3 = _SEG_TOP + _SEG_RIGHT + _SEG_BOTTOM  # 0.80
-
-
-def _t_to_xy(t: float) -> Tuple[float, float]:
-    """Convert perimeter progress t [0, 1) to (x_norm, y_norm).
-
-    Clockwise from top-left:
-      top    edge: x 0→1, y=1
-      right  edge: x=1,   y 1→0
-      bottom edge: x 1→0, y=0
-      left   edge: x=0,   y 0→1
-    """
-    t = t % 1.0
-    if t < _B1:
-        return t / _SEG_TOP, 1.0
-    elif t < _B2:
-        return 1.0, 1.0 - (t - _B1) / _SEG_RIGHT
-    elif t < _B3:
-        return 1.0 - (t - _B2) / _SEG_BOTTOM, 0.0
-    else:
-        return 0.0, (t - _B3) / (1.0 - _B3)
+# Circuit path — loaded once from SVG on first use
+_circuit_path: Optional[CircuitPath] = None
 
 
 def _handle_signal(sig, frame):
     """Handle shutdown signals gracefully."""
-    # frame is unused but part of the signal handler signature
     global _shutdown
     logger.info("Received signal %s, shutting down...", sig)
     _shutdown = True
@@ -110,29 +79,34 @@ def _utc_now_iso() -> str:
 
 
 def _init_state_if_needed() -> None:
-    """Initialize t values spread evenly around the perimeter."""
-    global _driver_state
+    """Initialize driver t values and load the circuit path from SVG."""
+    global _driver_state, _circuit_path
     if _driver_state:
         return
 
     for idx, (num, _) in enumerate(DUMMY_DRIVERS):
         _driver_state[num] = idx / len(DUMMY_DRIVERS)
 
+    logger.info("Loading circuit SVG from: %s", CIRCUIT_SVG_PATH)
+    _circuit_path = CircuitPath(CIRCUIT_SVG_PATH)
+    logger.info("Circuit path loaded (%d points)", len(_circuit_path._pts))
+
 
 def _generate_dummy_snapshot() -> Snapshot:
-    """Generate a fake snapshot with drivers moving around the circuit perimeter."""
+    """Generate a fake snapshot with drivers moving along the circuit path."""
     _init_state_if_needed()
+    assert _circuit_path is not None
     now = _utc_now_iso()
 
     positions = []
     for num, code in DUMMY_DRIVERS:
         # Advance t; small per-driver variance creates natural gaps.
         base = (num % 10) / 10000.0  # 0.0000 .. 0.0009
-        dt = 0.0020 + base
+        dt = 0.002 + base
         t = (_driver_state[num] + dt) % 1.0
         _driver_state[num] = t
 
-        x, y = _t_to_xy(t)
+        x, y = _circuit_path.t_to_xy(t)
         positions.append(
             DriverPosition(
                 driver_number=num,

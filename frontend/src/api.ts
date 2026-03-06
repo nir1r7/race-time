@@ -1,12 +1,17 @@
 import { Snapshot } from "./types";
 
-export async function fetchLiveSnapshot(): Promise<Snapshot | null> {
-    const res = await fetch("/api/live/snapshot")
-    
-    if (!res.ok){
-        return null;
-    }
+/*
+============= Obsolete =============
+Keeping around for future reference
+*/
 
-    const data: Snapshot = await res.json();
-    return data;
-}
+// export async function fetchLiveSnapshot(): Promise<Snapshot | null> {
+//     const res = await fetch("/api/live/snapshot")
+    
+//     if (!res.ok){
+//         return null;
+//     }
+
+//     const data: Snapshot = await res.json();
+//     return data;
+// }
