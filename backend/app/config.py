@@ -9,8 +9,13 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 # Poller Configuration
 POLL_INTERVAL_SECONDS = float(os.getenv("POLL_INTERVAL_SECONDS", "0.5"))
 
+# Circuit SVG path for the dummy poller (arc-length parameterisation)
+CIRCUIT_SVG_PATH = os.getenv("CIRCUIT_SVG_PATH", "")
+
 # OpenF1 Configuration (Phase 2)
 OPENF1_API_KEY = os.getenv("OPENF1_API_KEY", "")
 
-# Circuit SVG path for the dummy poller (arc-length parameterisation)
-CIRCUIT_SVG_PATH = os.getenv("CIRCUIT_SVG_PATH", "")
+OPENF1_USERNAME = os.getenv("OPENF1_USERNAME", "")
+OPENF1_PASSWORD = os.getenv("OPENF1_PASSWORD", "")
+MQTT_HOST = os.getenv("MQTT_HOST", "mqtt.openf1.org")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "8883"))
