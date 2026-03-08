@@ -13,14 +13,15 @@ const TYRE_COLORS: Record<string, string> = {
 type Props = {
     entries: LeaderBoardEntry[];
     driverColours: Map<string, string>;
+    raceName: string;
 };
 
-function Leaderboard({ entries, driverColours }: Props) {
+function Leaderboard({ entries, driverColours, raceName }: Props) {
     return (
         <div className="leaderboard-wrapper">
             <div className="leaderboard-header">
                 <span className="leaderboard-header__badge">F1</span>
-                <span className="leaderboard-header__title">Race</span>
+                <span className="leaderboard-header__title">{raceName}</span>
             </div>
             <table className="leaderboard">
                 <tbody>

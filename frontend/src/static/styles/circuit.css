@@ -33,6 +33,6 @@
   box-sizing: border-box;
   z-index: 1;
   /* Duration must match INTERVAL_TIME in App.tsx */
-  transition: left 0.505s linear, top 0.505s linear;
+  transition: left 1s linear, top 1s linear;
   will-change: left, top;
 }

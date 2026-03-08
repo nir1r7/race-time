@@ -74,3 +74,31 @@ export const CIRCUITS: Record<CircuitKey, CircuitConfig> = {
     yas_marina:   { name: 'Yas Marina Circuit', svgUrl: yasMarinaUrl },
     zandvoort:    { name: 'Circuit Zandvoort', svgUrl: zandvoortUrl },
 }
+
+
+export const CIRCUIT_NAME_MAP: Record<string, CircuitKey> = {
+    "Melbourne":        "melbourne",
+    "Sakhir":           "sakhir",
+    "Jeddah":           "jeddah",
+    "Suzuka":           "suzuka",
+    "Shanghai":         "shanghai",
+    "Miami":            "miami",
+    "Imola":            "imola",
+    "Monte Carlo":      "monte_carlo",
+    "Montreal":         "montreal",
+    "Barcelona":        "catalunya",
+    "Spielberg":        "spielberg",
+    "Silverstone":      "silverstone",
+    "Budapest":         "hungaroring",
+    "Spa-Francorchamps":"spa",
+    "Zandvoort":        "zandvoort",
+    "Monza":            "monza",
+    // "Baku":             "baku",          // not built yet
+    // "Singapore":        "singapore",     // not built yet
+    "Austin":           "austin",
+    "Mexico City":      "mexico_city",
+    "Interlagos":       "interlagos",
+    "Las Vegas":        "las_vegas",
+    "Lusail":           "lusail",
+    "Yas Marina":       "yas_marina",
+}

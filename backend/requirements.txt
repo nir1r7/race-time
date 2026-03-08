@@ -14,6 +14,9 @@ hiredis>=3.0.0
 # HTTP Client
 httpx>=0.28.1
 
+# MQTT
+aiomqtt>=2.0.0
+
 # Monitoring
 prometheus-client>=0.21.0
 

@@ -3,15 +3,27 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import redis_store
-from app.openf1 import fetch_drivers_for_season
+from app.openf1 import fetch_drivers_for_season, fetch_next_race, get_token
 
+import httpx
 import json
 import asyncio
+from datetime import datetime, timezone, timedelta
 
 
 router = APIRouter(prefix="/api")
 
 _drivers_cache: list[dict] | None = None
+_token: str | None = None
+_token_expiry: datetime | None = None
+
+
+async def _get_api_token() -> str:
+    global _token, _token_expiry
+    now = datetime.now(timezone.utc)
+    if _token is None or _token_expiry is None or now >= _token_expiry - timedelta(seconds=60):
+        _token, _token_expiry = await get_token()
+    return _token
 
 
 @router.get("/health")
@@ -28,8 +40,8 @@ async def health():
 
 
 async def queue_generator():
-    # backfill immediately with last 5 snapshots
-    recent = await redis_store.get_last_n_snapshots(5)
+    # backfill immediately with last 10 snapshots
+    recent = await redis_store.get_last_n_snapshots(10)
     
     # oldest first
     for snapshot in reversed(recent):
@@ -73,9 +85,13 @@ async def drivers():
 
     if _drivers_cache is not None:
         return _drivers_cache
-    
-    all_drivers = await fetch_drivers_for_season()
-    
+
+    try:
+        token = await _get_api_token()
+        all_drivers = await fetch_drivers_for_season(token)
+    except (httpx.HTTPStatusError, httpx.RequestError) as e:
+        return JSONResponse(status_code=503, content={"detail": "OpenF1 API unavailable", "error": str(e)})
+
     _drivers_cache = [
         {
             "driver_code": driver["name_acronym"],
@@ -86,3 +102,25 @@ async def drivers():
     ]
 
     return _drivers_cache
+
+
+@router.get("/schedule")
+async def schedule():
+    cached = await redis_store.get_schedule_cache()
+
+    if cached is not None:
+        return cached
+
+    try:
+        token = await _get_api_token()
+        next_race = await fetch_next_race(token)
+    except (httpx.HTTPStatusError, httpx.RequestError) as e:
+        return JSONResponse(status_code=503, content={"detail": "OpenF1 API unavailable", "error": str(e)})
+
+    if next_race is None:
+        return None
+
+    # Don't cache live sessions — state changes every few minutes
+    if not next_race.get("is_live"):
+        await redis_store.set_schedule_cache(next_race)
+    return next_race

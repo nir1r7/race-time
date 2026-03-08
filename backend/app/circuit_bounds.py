@@ -1,7 +1,9 @@
 
 import json
+import os
 
-with open("./data/bounds.json", "r") as f:
+_dir = os.path.dirname(__file__)
+with open(os.path.join(_dir, "data", "bounds.json"), "r") as f:
     data = json.load(f)
 
 def normalize(circuit_key, x, y) :

@@ -8,6 +8,7 @@ from app.config import REDIS_URL
 
 # Redis key for the live snapshot
 SNAPSHOT_KEY = "live:snapshots"
+SCHEDULE_KEY = "static:schedule"
 
 # Global client (initialized on first use)
 _client: Optional[redis.Redis] = None
@@ -46,7 +47,7 @@ async def set_snapshot(snapshot: dict) -> None:
     # use a pipe in case you want multiple commands processed by redis at the same time
     async with client.pipeline() as pipe:
         pipe.lpush(SNAPSHOT_KEY, json.dumps(snapshot))
-        pipe.ltrim(SNAPSHOT_KEY, 0, 5)
+        pipe.ltrim(SNAPSHOT_KEY, 0, 14)
         await pipe.execute()
 
 
@@ -69,3 +70,17 @@ async def get_last_n_snapshots(n: int) -> list[dict]:
         return []
     
     return [json.loads(s) for s in snapshots]
+
+
+async def get_schedule_cache() -> dict | None:
+    client = await get_client()
+
+    data = await client.get(SCHEDULE_KEY)
+    if data is None:
+        return None
+    return json.loads(data)
+
+async def set_schedule_cache(data: dict, ttl_seconds: int = 43200) -> None:
+    client = await get_client()
+
+    await client.set(SCHEDULE_KEY, json.dumps(data), ex = ttl_seconds)

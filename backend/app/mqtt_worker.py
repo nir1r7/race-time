@@ -1,5 +1,4 @@
 import aiomqtt
-import httpx
 import asyncio
 import json
 import logging
@@ -11,7 +10,7 @@ from app import redis_store
 from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, Snapshot
 from app.circuit_bounds import normalize
 from app.config import OPENF1_USERNAME, OPENF1_PASSWORD, MQTT_HOST, MQTT_PORT
-from app.openf1 import fetch_latest_session, fetch_latest_positions, fetch_drivers, fetch_latest_laps
+from app.openf1 import get_token, fetch_latest_session, fetch_latest_positions, fetch_drivers, fetch_latest_laps
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,33 +19,14 @@ _positions: dict[int, dict] = {}
 _laps: dict[int, dict] = {}
 _drivers: dict[int, dict] = {}
 _session: dict = {}
+_last_snapshot_time: float = 0.0
+
+SNAPSHOT_INTERVAL = 0.5  # seconds — max 2Hz
 
 delay = 1.0
 max_delay = 60.0
 _shutdown = False
 
-
-async def _get_token() -> tuple[str, datetime]:
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://api.openf1.org/token",
-            data = {
-                "username": OPENF1_USERNAME,
-                "password": OPENF1_PASSWORD,
-                "grant_type": "password",
-            },
-        )
-
-        response.raise_for_status()
-        data = response.json()
-        token = data["access_token"]
-
-        expires_in = data["expires_in"] # in seconds
-
-        expiry_time = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
-
-        return token, expiry_time
-    
 
 async def _bootstrap(token) -> None:
     global _session, _drivers, _positions, _laps
@@ -68,12 +48,15 @@ async def _assemble_snapshot() -> Snapshot:
     positions_list = []
     leaderboard_list = []
 
-    circuit_key = _session.get("circuit_short_name", "").lower()
+    circuit_key = str(_session.get("circuit_key", ""))
 
 
     for num, pos in _positions.items():
-        raw_x = pos["x"]
-        raw_y = pos["y"]
+        raw_x = pos.get("x")
+        raw_y = pos.get("y")
+
+        if raw_x is None or raw_y is None:
+            continue
 
         x_norm, y_norm = normalize(circuit_key, raw_x, raw_y)
 
@@ -82,17 +65,17 @@ async def _assemble_snapshot() -> Snapshot:
 
         positions_list.append(DriverPosition(
             driver_number = num,
-            driver_code = driver.get("name_acronym", "UNK"),
+            driver_code = driver.get("name_acronym") or "UNK",
             x_norm = x_norm,
             y_norm = y_norm,
         ))
 
         leaderboard_list.append(LeaderboardEntry(
-            position = lap.get("position", 1),
-            driver_code = driver.get("name_acronym", "UNK"),
-            team = driver.get("team_name", "Unkown"),
-            gap_to_leader = lap.get("gap_to_leader", 0.0),
-            tire_compound = lap.get("tire_compound", "Unknown"),
+            position = lap.get("position") or 1,
+            driver_code = driver.get("name_acronym") or "UNK",
+            team = driver.get("team_name") or "Unknown",
+            gap_to_leader = lap.get("gap_to_leader") or 0.0,
+            tire_compound = lap.get("tire_compound") or "Unknown",
         ))
 
     leaderboard_list.sort(key=lambda e: e.position)
@@ -110,6 +93,7 @@ async def _assemble_snapshot() -> Snapshot:
 
 
 async def _run_mqtt_session(token):
+    global _last_snapshot_time
     async with aiomqtt.Client(
         hostname = MQTT_HOST,
         port = MQTT_PORT,
@@ -130,8 +114,15 @@ async def _run_mqtt_session(token):
             if (topic == "v1/location"):
                 if driver_num is not None:
                     _positions[driver_num] = payload
-                snapshot = await _assemble_snapshot()
-                await redis_store.set_snapshot(snapshot.model_dump())
+                loop = asyncio.get_running_loop()
+                now_ts = loop.time()
+                if now_ts - _last_snapshot_time >= SNAPSHOT_INTERVAL:
+                    _last_snapshot_time = now_ts
+                    try:
+                        snapshot = await _assemble_snapshot()
+                        await redis_store.set_snapshot(snapshot.model_dump())
+                    except Exception:
+                        logger.exception("Failed to assemble snapshot")
             elif (topic == "v1/laps"):
                 if driver_num is not None:
                     _laps[driver_num] = payload
@@ -144,26 +135,26 @@ async def _run_mqtt_session(token):
 
 
 async def _worker_loop():
-    delay = 1.0
+    # delay = 0.1
 
     if not await redis_store.ping():
         logger.error("Cannot connect to Redis, exiting")
         return
 
-    token, token_expiry = await _get_token()
+    token, token_expiry = await get_token()
     await _bootstrap(token)
 
     logger.info("Bootstrap complete, connecting to MQTT broker...")
 
     while not _shutdown:
         if datetime.now(timezone.utc) >= token_expiry - timedelta(seconds=60):
-            token, token_expiry = await _get_token()
+            token, token_expiry = await get_token()
 
         try:
             await _run_mqtt_session(token)
-            delay = 1.0
+            # delay = 0.1
         except Exception as e:
-            logger.error("Connection failed: %s, retrying in %.1fs", e, delay)
+            logger.error("Connection failed: %s (%s), retrying in %.1fs", e, type(e).__name__, delay, exc_info=True)
             await asyncio.sleep(delay)
             delay = min(delay * 2, max_delay)
 
