@@ -149,7 +149,7 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [x] Redis snapshot queue (LPUSH + LTRIM, last 5) replacing single key
 - [x] SSE endpoint `GET /api/live/stream` replacing polling
 - [x] Frontend: swap `setInterval` → `EventSource` with client-side playback queue
-- [ ] `mqtt_worker.py` — full MQTT worker shell (ready for credentials)
+- [x] `mqtt_worker.py` — full MQTT worker shell (ready for credentials)
 - [ ] Update dummy poller to populate trail data
 - [ ] Docker Compose `premium` profile for `mqtt-worker` service
 

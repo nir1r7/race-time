@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Make both entrypoints executable
-RUN chmod +x /app/entrypoint-api.sh /app/entrypoint-poller.sh
+RUN chmod +x /app/entrypoint-api.sh /app/entrypoint-poller.sh /app/entrypoint-mqtt-worker.sh
 
 EXPOSE 8000
 

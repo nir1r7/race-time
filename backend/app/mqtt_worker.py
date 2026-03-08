@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import ssl
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import signal
 
 from app import redis_store
@@ -26,7 +26,7 @@ max_delay = 60.0
 _shutdown = False
 
 
-async def _get_token() -> str:
+async def _get_token() -> tuple[str, datetime]:
     async with httpx.AsyncClient() as client:
         response = await client.post(
             "https://api.openf1.org/token",
@@ -40,9 +40,12 @@ async def _get_token() -> str:
         response.raise_for_status()
         data = response.json()
         token = data["access_token"]
-        # expires_in = data["expires_in"] # in seconds
 
-        return token
+        expires_in = data["expires_in"] # in seconds
+
+        expiry_time = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+
+        return token, expiry_time
     
 
 async def _bootstrap(token) -> None:
@@ -147,12 +150,15 @@ async def _worker_loop():
         logger.error("Cannot connect to Redis, exiting")
         return
 
-    token = await _get_token()
+    token, token_expiry = await _get_token()
     await _bootstrap(token)
 
     logger.info("Bootstrap complete, connecting to MQTT broker...")
 
     while not _shutdown:
+        if datetime.now(timezone.utc) >= token_expiry - timedelta(seconds=60):
+            token, token_expiry = await _get_token()
+
         try:
             await _run_mqtt_session(token)
             delay = 1.0

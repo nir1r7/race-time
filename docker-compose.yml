@@ -37,6 +37,24 @@ services:
       redis:
         condition: service_healthy
     entrypoint: ["/app/entrypoint-poller.sh"]
+    profiles:
+      - dev
+
+  mqtt-worker:
+    build: ./backend
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: info
+      OPENF1_USERNAME: ${OPENF1_USERNAME}
+      OPENF1_PASSWORD: ${OPENF1_PASSWORD}
+      MQTT_HOST: ${MQTT_HOST:-mqtt.openf1.org}
+      MQTT_PORT: ${MQTT_PORT:-8883}
+    depends_on:
+      redis:
+        condition: service_healthy
+    entrypoint: ["/app/entrypoint-mqtt-worker.sh"]
+    profiles:
+      - premium
 
   frontend:
     build: ./frontend
