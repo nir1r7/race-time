@@ -10,13 +10,24 @@ export default function App() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [driverColours, setDriverColours] = useState<Map<string, string>>(new Map());
 
-  const INTERVAL_TIME = 505; // must match transition duration in circuit.css
-  const MAX_QUEUE_DEPTH = 15;
-  
   const snapshotQueue = useRef<Snapshot[]>([]);
 
   const isStale = snapshot !== null && Date.now() - new Date(snapshot.timestamp).getTime() > 5000;
+
+  const INTERVAL_TIME = 505; // must match transition duration in circuit.css
+  const MAX_QUEUE_DEPTH = 15;
+
+  useEffect(() => {
+    fetch('/api/drivers')
+      .then(response => response.json())
+      .then((data: {driver_code: string; team_colour: string}[]) => {
+        const map = new Map(data.map(d => [d.driver_code, `#${d.team_colour}`]));
+        setDriverColours(map)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!isLive) {
@@ -95,10 +106,10 @@ export default function App() {
       {isLive && !error && !loading && snapshot && (
         <div className="live-layout">
           <div className="live-layout__leaderboard">
-            <Leaderboard entries={snapshot.leaderboard} />
+            <Leaderboard entries={snapshot.leaderboard} driverColours={driverColours} />
           </div>
           <div className="live-layout__circuit">
-            <Circuit positions={snapshot.positions} leaderboard={snapshot.leaderboard} />
+            <Circuit positions={snapshot.positions} leaderboard={snapshot.leaderboard} driverColours={driverColours} />
           </div>
         </div>
       )}

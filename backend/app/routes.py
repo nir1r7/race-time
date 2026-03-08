@@ -1,13 +1,17 @@
 """API routes for RaceTime."""
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
 from app import redis_store
+from app.openf1 import fetch_drivers_for_season
 
 import json
 import asyncio
 
 
 router = APIRouter(prefix="/api")
+
+_drivers_cache: list[dict] | None = None
 
 
 @router.get("/health")
@@ -21,25 +25,6 @@ async def health():
         "status": "ok" if redis_ok else "degraded",
         "redis": "ok" if redis_ok else "down",
     }
-
-
-"""
-============= Obsolete =============
-Keeping around for future reference
-"""
-# @router.get("/live/snapshot")
-# async def live_snapshot():
-#     """
-#     Get the latest race snapshot.
-#     Returns 503 if no snapshot available yet.
-#     """
-#     snapshot = await redis_store.get_latest_snapshot()
-#     if snapshot is None:
-#         return JSONResponse(
-#             status_code=503,
-#             content={"error": "no snapshot yet"},
-#         )
-#     return snapshot
 
 
 async def queue_generator():
@@ -80,3 +65,24 @@ async def live_stream(request: Request):
             "X-Accel-Buffering": "no",
         }
     )
+
+
+@router.get("/drivers")
+async def drivers():
+    global _drivers_cache
+
+    if _drivers_cache is not None:
+        return _drivers_cache
+    
+    all_drivers = await fetch_drivers_for_season()
+    
+    _drivers_cache = [
+        {
+            "driver_code": driver["name_acronym"],
+            "team_name":   driver["team_name"],
+            "team_colour": driver["team_colour"],
+        }
+        for driver in all_drivers if driver.get("name_acronym") and driver.get("team_colour")
+    ]
+
+    return _drivers_cache

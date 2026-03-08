@@ -1,15 +1,16 @@
 import { ACTIVE_CIRCUIT } from "../../circuit-config";
 import { CIRCUITS } from "../../circuits";
 import { DriverPosition, LeaderBoardEntry } from "../../types";
-import { TEAM_COLORS } from "../../teamColors";
+// import { TEAM_COLORS } from "../../teamColors";
 import "../../static/styles/circuit.css";
 
 type Props = {
     positions: DriverPosition[];
     leaderboard: LeaderBoardEntry[];
+    driverColours: Map<string, string>;
 };
 
-function Circuit({ positions, leaderboard }: Props) {
+function Circuit({ positions, leaderboard, driverColours }: Props) {
     const circuit = CIRCUITS[ACTIVE_CIRCUIT];
 
     const teamByDriver = new Map<string, string>(
@@ -25,7 +26,7 @@ function Circuit({ positions, leaderboard }: Props) {
             />
             {positions.map((p) => {
                 const team = teamByDriver.get(p.driver_code);
-                const color = team ? (TEAM_COLORS[team] ?? "#888") : "#888";
+                const color = driverColours.get(p.driver_code) ?? "#fff";
                 return (
                     <div
                         key={p.driver_number}

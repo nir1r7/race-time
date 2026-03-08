@@ -79,3 +79,6 @@ kubeconfig
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+
+prerace.md

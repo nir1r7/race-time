@@ -1,5 +1,5 @@
 import { LeaderBoardEntry } from "../../types";
-import { TEAM_COLORS } from "../../teamColors";
+// import { TEAM_COLORS } from "../../teamColors";
 import "../../static/styles/leaderboard.css";
 
 const TYRE_COLORS: Record<string, string> = {
@@ -12,9 +12,10 @@ const TYRE_COLORS: Record<string, string> = {
 
 type Props = {
     entries: LeaderBoardEntry[];
+    driverColours: Map<string, string>;
 };
 
-function Leaderboard({ entries }: Props) {
+function Leaderboard({ entries, driverColours }: Props) {
     return (
         <div className="leaderboard-wrapper">
             <div className="leaderboard-header">
@@ -35,7 +36,7 @@ function Leaderboard({ entries }: Props) {
                                     <div className="lb-driver-inner">
                                         <span
                                             className="lb-team-bar"
-                                            style={{ backgroundColor: TEAM_COLORS[entry.team] ?? "#888" }}
+                                            style={{ backgroundColor: driverColours.get(entry.driver_code) ?? "#ffffff" }}
                                         />
                                         <span className="lb-driver-code">{entry.driver_code}</span>
                                     </div>

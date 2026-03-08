@@ -1,6 +1,16 @@
 import httpx
 
 
+async def fetch_drivers_for_season() -> list[dict]:
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.openf1.org/v1/drivers",
+            params={"session_key": "latest"},
+        )
+        response.raise_for_status()
+        return response.json()
+
+
 async def fetch_latest_session(token: str) -> list[dict]:
     async with httpx.AsyncClient() as client:
         response = await client.get(
