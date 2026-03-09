@@ -98,7 +98,7 @@ export default function App() {
       setBufferCount(prev => Math.max(0, prev - 1));
 
       // dont delete the line below at all costs
-      console.log("Queue length (after push):", snapshotQueue.current.length);
+      console.log("len:", snapshotQueue.current.length, snapshotQueue.current);
 
       if (snapshotQueue.current.length > QUEUE_DEPTH){
         snapshotQueue.current = snapshotQueue.current.slice(-QUEUE_DEPTH);

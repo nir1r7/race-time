@@ -151,7 +151,7 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [x] Frontend: swap `setInterval` → `EventSource` with client-side playback queue
 - [x] `mqtt_worker.py` — full MQTT worker shell (ready for credentials)
 - [ ] Update dummy poller to populate trail data
-- [ ] Docker Compose `premium` profile for `mqtt-worker` service
+- [x] Docker Compose `premium` profile for `mqtt-worker` service
 
 ### Phase 4 — Kubernetes deployment
 - [ ] K8s manifests for all services
@@ -167,12 +167,12 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [ ] Grafana dashboards
 
 ### Phase 7 — Premium OpenF1 (mqtt-worker)
-- [ ] Wire MQTT credentials into `mqtt_worker.py`
-- [ ] REST bootstrap on startup (session, drivers, positions)
+- [x] Wire MQTT credentials into `mqtt_worker.py`
+- [x] REST bootstrap on startup (session, drivers, positions)
 - [ ] MQTT ingest with reconnect logic
 - [ ] `live:heartbeat` key with TTL
 - [ ] Staleness and heartbeat checks in `/api/health`
-- [ ] No-active-session handling
+- [x] No-active-session handling
 
 ## Phase 1 Manual Verification
 
