@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import redis_store
-from app.openf1 import fetch_drivers_for_season, fetch_next_race, get_token
+from app.openf1 import fetch_next_race, get_token, fetch_drivers
 
 import httpx
 import json
@@ -41,7 +41,7 @@ async def health():
 
 async def queue_generator():
     # backfill immediately with last 10 snapshots
-    recent = await redis_store.get_last_n_snapshots(10)
+    recent = await redis_store.get_last_n_snapshots(15)
     
     # oldest first
     for snapshot in reversed(recent):
@@ -88,7 +88,7 @@ async def drivers():
 
     try:
         token = await _get_api_token()
-        all_drivers = await fetch_drivers_for_season(token)
+        all_drivers = await fetch_drivers("latest", token)
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
         return JSONResponse(status_code=503, content={"detail": "OpenF1 API unavailable", "error": str(e)})
 
@@ -120,7 +120,7 @@ async def schedule():
     if next_race is None:
         return None
 
-    # Don't cache live sessions — state changes every few minutes
+    # Don't cache live sessions, state changes every few minutes
     if not next_race.get("is_live"):
         await redis_store.set_schedule_cache(next_race)
     return next_race

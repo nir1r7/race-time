@@ -31,7 +31,7 @@ services:
     environment:
       REDIS_URL: redis://redis:6379/0
       LOG_LEVEL: info
-      POLL_INTERVAL_SECONDS: 0.5
+      POLL_INTERVAL_SECONDS: 1
       CIRCUIT_SVG_PATH: /data/circuits/svgs/Monte_Carlo_22.svg
     volumes:
       - ./scripts/output:/data/circuits

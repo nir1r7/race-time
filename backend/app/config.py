@@ -7,7 +7,7 @@ import os
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
 # Poller Configuration
-POLL_INTERVAL_SECONDS = float(os.getenv("POLL_INTERVAL_SECONDS", "0.5"))
+POLL_INTERVAL_SECONDS = float(os.getenv("POLL_INTERVAL_SECONDS", "1.25"))
 
 # Circuit SVG path for the dummy poller (arc-length parameterisation)
 CIRCUIT_SVG_PATH = os.getenv("CIRCUIT_SVG_PATH", "")

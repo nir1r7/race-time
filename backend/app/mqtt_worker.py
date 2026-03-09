@@ -135,7 +135,7 @@ async def _run_mqtt_session(token):
 
 
 async def _worker_loop():
-    # delay = 0.1
+    delay = 0.1
 
     if not await redis_store.ping():
         logger.error("Cannot connect to Redis, exiting")
@@ -152,7 +152,7 @@ async def _worker_loop():
 
         try:
             await _run_mqtt_session(token)
-            # delay = 0.1
+            delay = 0.1
         except Exception as e:
             logger.error("Connection failed: %s (%s), retrying in %.1fs", e, type(e).__name__, delay, exc_info=True)
             await asyncio.sleep(delay)

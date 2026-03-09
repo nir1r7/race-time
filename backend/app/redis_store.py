@@ -40,6 +40,12 @@ async def ping() -> bool:
         return False
 
 
+async def clear_snapshots() -> None:
+    """Delete all snapshots from Redis (called on poller startup to purge stale data)."""
+    client = await get_client()
+    await client.delete(SNAPSHOT_KEY)
+
+
 async def set_snapshot(snapshot: dict) -> None:
     """Write snapshot to Redis."""
     client = await get_client()

@@ -22,15 +22,15 @@ async def get_token() -> tuple[str, datetime]:
         return token, expiry_time
 
 
-async def fetch_drivers_for_season(token: str) -> list[dict]:
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.get(
-            "https://api.openf1.org/v1/drivers",
-            headers={"Authorization": f"Bearer {token}"},
-            params={"session_key": "latest"},
-        )
-        response.raise_for_status()
-        return response.json()
+# async def fetch_drivers_for_season(token: str) -> list[dict]:
+#     async with httpx.AsyncClient(timeout=15.0) as client:
+#         response = await client.get(
+#             "https://api.openf1.org/v1/drivers",
+#             headers={"Authorization": f"Bearer {token}"},
+#             params={"session_key": "latest"},
+#         )
+#         response.raise_for_status()
+#         return response.json()
 
 
 async def fetch_latest_session(token: str) -> list[dict]:
@@ -56,7 +56,7 @@ async def fetch_latest_positions(session_key: int, token: str) -> list[dict]:
     
 
 async def fetch_drivers(session_key: int, token: str) -> list[dict]:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=15.0) as client:
         response = await client.get(
             "https://api.openf1.org/v1/drivers",
             headers={"Authorization": f"Bearer {token}"},

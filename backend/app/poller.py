@@ -18,41 +18,44 @@ from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, S
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Dummy driver data (20 drivers)
+# Dummy driver data (22 drivers, 2026 season)
 DUMMY_DRIVERS = [
-    (1, "VER"),
-    (11, "PER"),
-    (44, "HAM"),
-    (63, "RUS"),
-    (16, "LEC"),
-    (55, "SAI"),
-    (4, "NOR"),
+    (1, "NOR"),
     (81, "PIA"),
+    (63, "RUS"),
+    (12, "ANT"),
+    (3, "VER"),
+    (6, "HAD"),
+    (16, "LEC"),
+    (44, "HAM"),
+    (23, "ALB"),
+    (55, "SAI"),
+    (30, "LAW"),
+    (41, "LIN"),
     (14, "ALO"),
     (18, "STR"),
-    (10, "GAS"),
     (31, "OCO"),
-    (23, "ALB"),
-    (2, "SAR"),
-    (77, "BOT"),
-    (24, "ZHO"),
-    (20, "MAG"),
+    (87, "BEA"),
     (27, "HUL"),
-    (22, "TSU"),
-    (3, "RIC"),
+    (5, "BOR"),
+    (10, "GAS"),
+    (43, "COL"),
+    (11, "PER"),
+    (77, "BOT"),
 ]
 
 DUMMY_TEAMS = {
-    "VER": "Red Bull", "PER": "Red Bull",
-    "HAM": "Mercedes", "RUS": "Mercedes",
-    "LEC": "Ferrari", "SAI": "Ferrari",
     "NOR": "McLaren", "PIA": "McLaren",
+    "RUS": "Mercedes", "ANT": "Mercedes",
+    "VER": "Red Bull Racing", "HAD": "Red Bull Racing",
+    "LEC": "Ferrari", "HAM": "Ferrari",
+    "ALB": "Williams", "SAI": "Williams",
+    "LAW": "Racing Bulls", "LIN": "Racing Bulls",
     "ALO": "Aston Martin", "STR": "Aston Martin",
-    "GAS": "Alpine", "OCO": "Alpine",
-    "ALB": "Williams", "SAR": "Williams",
-    "BOT": "Alfa Romeo", "ZHO": "Alfa Romeo",
-    "MAG": "Haas", "HUL": "Haas",
-    "TSU": "AlphaTauri", "RIC": "AlphaTauri",
+    "OCO": "Haas", "BEA": "Haas",
+    "HUL": "Audi", "BOR": "Audi",
+    "GAS": "Alpine", "COL": "Alpine",
+    "PER": "Cadillac", "BOT": "Cadillac",
 }
 
 DUMMY_COMPOUNDS = ["S", "M", "H"]
@@ -102,7 +105,7 @@ def _generate_dummy_snapshot() -> Snapshot:
     for num, code in DUMMY_DRIVERS:
         # Advance t; small per-driver variance creates natural gaps.
         base = (num % 10) / 10000.0  # 0.0000 .. 0.0009
-        dt = 0.002 + base
+        dt = 0.004 + base
         t = (_driver_state[num] + dt) % 1.0
         _driver_state[num] = t
 
@@ -152,7 +155,9 @@ async def poll_loop():
         logger.error("Cannot connect to Redis, exiting")
         return
 
-    logger.info("Redis connected, starting poll loop...")
+    logger.info("Redis connected, clearing stale snapshots...")
+    await redis_store.clear_snapshots()
+    logger.info("Stale snapshots cleared, starting poll loop...")
 
     while not _shutdown:
         try:
