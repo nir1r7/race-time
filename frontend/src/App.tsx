@@ -24,7 +24,7 @@ export default function App() {
 
   const isStale = snapshot !== null && Date.now() - new Date(snapshot.timestamp).getTime() > 15000;
 
-  const INTERVAL_TIME = 1000;
+  const INTERVAL_TIME = 250;
   const QUEUE_DEPTH = 15;
 
   useEffect(() => {
@@ -118,10 +118,13 @@ export default function App() {
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    let hasStarted = false;
+
     const displayInterval = setInterval(() => {
       if (snapshotQueue.current.length === 0) return;
-      if (snapshotQueue.current.length < QUEUE_DEPTH) return;
+      if (!hasStarted && snapshotQueue.current.length < QUEUE_DEPTH) return;
 
+        hasStarted = true;
         const next = snapshotQueue.current.shift()!;
 
         setIsBuffering(false);
