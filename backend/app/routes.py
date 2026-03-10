@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import redis_store
 from app.openf1 import fetch_next_race, get_token, fetch_drivers
+from app.interpolator import fit_splines, interpolate_snapshot, MIN_SNAPSHOTS, WINDOW_SIZE
 
 import httpx
 import json
@@ -40,27 +41,58 @@ async def health():
 
 
 async def queue_generator():
-    # backfill immediately with last 10 snapshots
-    recent = await redis_store.get_last_n_snapshots(15)
-    
-    # oldest first
-    for snapshot in reversed(recent):
-        yield f"data: {json.dumps(snapshot)}\n\n"
+    QUEUE_DEPTH = 15
+    OUTPUT_INTERVAL = 0.25
+    POLL_SLEEP = 0.5
+    MAX_CATCHUP_S = QUEUE_DEPTH*OUTPUT_INTERVAL
 
-    last_seen_timestamp = recent[0]["timestamp"] if recent else None
+    # wait for the data
+    while True:
+        window = await redis_store.get_last_n_snapshots(WINDOW_SIZE)
+        if len(window) >= MIN_SNAPSHOTS:
+            break
+        await asyncio.sleep(POLL_SLEEP)
+
+    # backfill the queue
+    fit = fit_splines(window)
+    trail_state: dict = {}
+
+    backfill_start = max(fit.safe_end - (QUEUE_DEPTH-1)*OUTPUT_INTERVAL, fit.safe_start)
+    
+    t = backfill_start
+    while t <= fit.safe_end + 1e-9:
+        snap = interpolate_snapshot(fit, t, trail_state)
+        yield f"data: {json.dumps(snap)}\n\n"
+        t += OUTPUT_INTERVAL
+
+    output_t = fit.safe_end + OUTPUT_INTERVAL
+    last_seen_ts = window[0]["timestamp"]
 
     try:
         while True:
-            await asyncio.sleep(0.1) # 100ms
+            await asyncio.sleep(OUTPUT_INTERVAL)
 
+            # has a new snapshot arrived?
             latest = await redis_store.get_latest_snapshot()
-            
-            # nothing or nothing new
-            if latest is None or latest["timestamp"] == last_seen_timestamp:
-                continue
+            if latest and latest["timestamp"] != last_seen_ts:
+                last_seen_ts = latest["timestamp"]
+                new_window = await redis_store.get_last_n_snapshots(WINDOW_SIZE)
+                
+                if len(new_window) >= MIN_SNAPSHOTS:
+                    fit = fit_splines(new_window)
 
-            last_seen_timestamp = latest["timestamp"]
-            yield f"data: {json.dumps(latest)}\n\n"
+                # if output_t is too far behind skip ahead
+                if fit.safe_end - output_t > MAX_CATCHUP_S:
+                    output_t = fit.safe_end - MAX_CATCHUP_S
+
+            # stall if output is caught up to safe boundary
+            if output_t > fit.safe_end:
+                continue
+            
+            snap = interpolate_snapshot(fit, output_t, trail_state)
+            yield f"data: {json.dumps(snap)}\n\n"
+            output_t += OUTPUT_INTERVAL
+
     except asyncio.CancelledError:
         pass
 

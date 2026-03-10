@@ -105,7 +105,7 @@ def _generate_dummy_snapshot() -> Snapshot:
     for num, code in DUMMY_DRIVERS:
         # Advance t; small per-driver variance creates natural gaps.
         base = (num % 10) / 10000.0  # 0.0000 .. 0.0009
-        dt = 0.004 + base
+        dt = 0.005 + base
         t = (_driver_state[num] + dt) % 1.0
         _driver_state[num] = t
 
