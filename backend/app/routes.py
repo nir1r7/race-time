@@ -42,7 +42,7 @@ async def health():
 
 async def queue_generator():
     QUEUE_DEPTH = 15
-    OUTPUT_INTERVAL = 0.25
+    OUTPUT_INTERVAL = 0.2428
     POLL_SLEEP = 0.5
     MAX_CATCHUP_S = QUEUE_DEPTH*OUTPUT_INTERVAL
 

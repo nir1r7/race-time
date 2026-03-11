@@ -100,8 +100,8 @@ export default function App() {
       // dont delete the line below at all costs
       console.log("len:", snapshotQueue.current.length, snapshotQueue.current);
 
-      if (snapshotQueue.current.length > QUEUE_DEPTH){
-        snapshotQueue.current = snapshotQueue.current.slice(-QUEUE_DEPTH);
+      if (snapshotQueue.current.length > QUEUE_DEPTH+1){
+        snapshotQueue.current = snapshotQueue.current.slice(-QUEUE_DEPTH-1);
       }
     };
 
@@ -112,7 +112,7 @@ export default function App() {
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        snapshotQueue.current = snapshotQueue.current.slice(-14);
+        snapshotQueue.current = snapshotQueue.current.slice(-15);
       }
     };
 

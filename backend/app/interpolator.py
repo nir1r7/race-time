@@ -6,7 +6,7 @@ import json
 LAG = 1
 WINDOW_SIZE = 8
 TRAIL_DEPTH = 6
-MIN_SNAPSHOTS = LAG + 2
+MIN_SNAPSHOTS = LAG + 3
 
 
 @dataclass
@@ -76,7 +76,7 @@ def evaluate_spline(spline: DriverSpline, t: float) -> tuple[float, float]:
 
     # find the largest i where t_vals[i] <= t
     i = int(np.searchsorted(spline.t_vals, t, side='right')) - 1
-    i = max(0, min(i, spline.n_points - 2), i)
+    i = max(0, min(i, spline.n_points - 2))
 
     h_i = spline.t_vals[i+1] - spline.t_vals[i]
 
