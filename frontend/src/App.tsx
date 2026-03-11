@@ -26,6 +26,9 @@ export default function App() {
 
   const INTERVAL_TIME = 250;
   const QUEUE_DEPTH = 15;
+  const GAIN = 2;     // ms per item deviation from target depth
+  const MIN_MS = 220;
+  const MAX_MS = 280;
 
   useEffect(() => {
     fetch('/api/drivers')
@@ -100,8 +103,8 @@ export default function App() {
       // dont delete the line below at all costs
       console.log("len:", snapshotQueue.current.length, snapshotQueue.current);
 
-      if (snapshotQueue.current.length > QUEUE_DEPTH+1){
-        snapshotQueue.current = snapshotQueue.current.slice(-QUEUE_DEPTH-1);
+      if (snapshotQueue.current.length > QUEUE_DEPTH + 5){
+        snapshotQueue.current = snapshotQueue.current.slice(-(QUEUE_DEPTH + 5));
       }
     };
 
@@ -119,23 +122,31 @@ export default function App() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     let hasStarted = false;
+    let displayTimer: ReturnType<typeof setTimeout>;
 
-    const displayInterval = setInterval(() => {
-      if (snapshotQueue.current.length === 0) return;
-      if (!hasStarted && snapshotQueue.current.length < QUEUE_DEPTH) return;
-
+    const consume = () => {
+      if (snapshotQueue.current.length > 0) {
+        if (!hasStarted && snapshotQueue.current.length < QUEUE_DEPTH) {
+          displayTimer = setTimeout(consume, INTERVAL_TIME);
+          return;
+        }
         hasStarted = true;
         const next = snapshotQueue.current.shift()!;
-
         setIsBuffering(false);
         setSnapshot(next);
         setLoading(false);
         setError(null);
-    }, INTERVAL_TIME);
-      
+      }
+      const error = snapshotQueue.current.length - QUEUE_DEPTH;
+      const nextDelay = Math.max(MIN_MS, Math.min(MAX_MS, INTERVAL_TIME - GAIN * error));
+      displayTimer = setTimeout(consume, nextDelay);
+    };
+
+    displayTimer = setTimeout(consume, INTERVAL_TIME);
+
     return () => {
       es.close();
-      clearInterval(displayInterval)
+      clearTimeout(displayTimer);
       snapshotQueue.current = [];
       setIsBuffering(false);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
