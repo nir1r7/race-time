@@ -60,10 +60,17 @@ DUMMY_TEAMS = {
 
 DUMMY_COMPOUNDS = ["S", "M", "H"]
 
+STINT_MIN_TICKS = 200
+STINT_MAX_TICKS = 500
+
 _shutdown = False
 
 # In-memory state: driver_number -> t (lap progress, 0.0 to 1.0)
 _driver_state: Dict[int, float] = {}
+
+# Tire stint state: compound per driver, ticks remaining in current stint
+_driver_tires: Dict[int, str] = {}
+_driver_stint_ticks: Dict[int, int] = {}
 
 # Circuit path — loaded once from SVG on first use
 _circuit_path: Optional[CircuitPath] = None
@@ -82,13 +89,15 @@ def _utc_now_iso() -> str:
 
 
 def _init_state_if_needed() -> None:
-    """Initialize driver t values and load the circuit path from SVG."""
-    global _driver_state, _circuit_path
+    """Initialize driver t values, tire stints, and load the circuit path from SVG."""
+    global _driver_state, _driver_tires, _driver_stint_ticks, _circuit_path
     if _driver_state:
         return
 
     for idx, (num, _) in enumerate(DUMMY_DRIVERS):
         _driver_state[num] = idx / len(DUMMY_DRIVERS)
+        _driver_tires[num] = rand.choice(DUMMY_COMPOUNDS)
+        _driver_stint_ticks[num] = rand.randint(STINT_MIN_TICKS, STINT_MAX_TICKS)
 
     logger.info("Loading circuit SVG from: %s", CIRCUIT_SVG_PATH)
     _circuit_path = CircuitPath(CIRCUIT_SVG_PATH)
@@ -109,6 +118,13 @@ def _generate_dummy_snapshot() -> Snapshot:
         t = (_driver_state[num] + dt) % 1.0
         _driver_state[num] = t
 
+        # Tick down stint; simulate a pit stop when it expires.
+        _driver_stint_ticks[num] -= 1
+        if _driver_stint_ticks[num] <= 0:
+            available = [c for c in DUMMY_COMPOUNDS if c != _driver_tires[num]]
+            _driver_tires[num] = rand.choice(available)
+            _driver_stint_ticks[num] = rand.randint(STINT_MIN_TICKS, STINT_MAX_TICKS)
+
         x, y = _circuit_path.t_to_xy(t)
         positions.append(
             DriverPosition(
@@ -128,7 +144,7 @@ def _generate_dummy_snapshot() -> Snapshot:
             driver_code=code,
             team=DUMMY_TEAMS.get(code, "Unknown"),
             gap_to_leader=round((leader_t - _driver_state[num]) % 1.0, 3),
-            tire_compound=rand.choice(DUMMY_COMPOUNDS),
+            tire_compound=_driver_tires[num],
         )
         for i, (num, code) in enumerate(ordered)
     ]

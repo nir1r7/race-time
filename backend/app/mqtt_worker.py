@@ -15,6 +15,19 @@ from app.openf1 import get_token, fetch_latest_session, fetch_latest_positions, 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+COMPOUND_MAP: dict[str, str] = {
+    "SOFT": "S", "MEDIUM": "M", "HARD": "H",
+    "INTERMEDIATE": "I", "WET": "W",
+    "S": "S", "M": "M", "H": "H", "I": "I", "W": "W",
+}
+
+
+def _normalize_compound(raw: str | None) -> str:
+    if not raw:
+        return "?"
+    return COMPOUND_MAP.get(raw.upper(), raw[0].upper())
+
+
 _positions: dict[int, dict] = {}
 _laps: dict[int, dict] = {}
 _drivers: dict[int, dict] = {}
@@ -75,7 +88,7 @@ async def _assemble_snapshot() -> Snapshot:
             driver_code = driver.get("name_acronym") or "UNK",
             team = driver.get("team_name") or "Unknown",
             gap_to_leader = lap.get("gap_to_leader") or 0.0,
-            tire_compound = lap.get("tire_compound") or "Unknown",
+            tire_compound = _normalize_compound(lap.get("compound") or lap.get("tire_compound")),
         ))
 
     leaderboard_list.sort(key=lambda e: e.position)
