@@ -41,8 +41,9 @@ async def fetch_latest_positions(session_key: int, token: str) -> list[dict]:
             params = {"session_key": session_key},
         )
         response.raise_for_status()
-        return response.json()
-    
+        entries = response.json()
+        return sorted(entries, key=lambda e: e.get("date", ""))
+
 
 async def fetch_drivers(session_key: int, token: str) -> list[dict]:
     async with httpx.AsyncClient(timeout=15.0) as client:
@@ -59,6 +60,18 @@ async def fetch_latest_laps(session_key: int, token: str) -> list[dict]:
     async with httpx.AsyncClient() as client:
         response = await client.get(
             "https://api.openf1.org/v1/laps",
+            headers={"Authorization": f"Bearer {token}"},
+            params={"session_key": session_key},
+        )
+        response.raise_for_status()
+        entries = response.json()
+        return sorted(entries, key=lambda e: e.get("lap_number", 0))
+
+
+async def fetch_latest_intervals(session_key: int, token: str) -> list[dict]:
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.get(
+            "https://api.openf1.org/v1/intervals",
             headers={"Authorization": f"Bearer {token}"},
             params={"session_key": session_key},
         )

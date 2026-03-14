@@ -32,7 +32,7 @@ function Leaderboard({ entries, driverColours, raceName }: Props) {
                     ) : (
                         entries.map((entry) => (
                             <tr key={entry.driver_code}>
-                                <td className="lb-pos">{entry.position}</td>
+                                <td className="lb-pos">{entry.position ?? '—'}</td>
                                 <td className="lb-driver">
                                     <div className="lb-driver-inner">
                                         <span
