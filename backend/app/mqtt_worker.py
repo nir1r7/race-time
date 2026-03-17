@@ -34,10 +34,12 @@ _drivers: dict[int, dict] = {}
 _session: dict = {}
 _last_snapshot_time: float = 0.0
 
-SNAPSHOT_INTERVAL = 0.5  # seconds — max 2Hz
+# seconds - max 2Hz
+SNAPSHOT_INTERVAL = 0.5  
 
-delay = 1.0
-max_delay = 60.0
+# test with values from 0.1 to 2
+DEFAULT_DELAY = 0.1
+MAX_DELAY = 60.0
 _shutdown = False
 
 
@@ -149,7 +151,8 @@ async def _run_mqtt_session(token):
 
 
 async def _worker_loop():
-    delay = 0.1
+    delay = DEFAULT_DELAY
+    attempt = 0
 
     if not await redis_store.ping():
         logger.error("Cannot connect to Redis, exiting")
@@ -166,11 +169,13 @@ async def _worker_loop():
 
         try:
             await _run_mqtt_session(token)
-            delay = 0.1
+            delay = DEFAULT_DELAY
+            attempt = 0
         except Exception as e:
-            logger.error("Connection failed: %s (%s), retrying in %.1fs", e, type(e).__name__, delay, exc_info=True)
+            attempt += 1
+            logger.error("Connection failed (attempt %d): %s — retrying in %.1fs", attempt, e, delay, exc_info=True)
             await asyncio.sleep(delay)
-            delay = min(delay * 2, max_delay)
+            delay = min(delay * 2, MAX_DELAY)
 
     logger.info("Worker loop stopped")
     await redis_store.close_client()
