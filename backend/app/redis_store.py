@@ -9,6 +9,7 @@ from app.config import REDIS_URL
 # Redis key for the live snapshot
 SNAPSHOT_KEY = "live:snapshots"
 SCHEDULE_KEY = "static:schedule"
+HEARTBEAT_KEY = "live:heartbeat"
 
 # Global client (initialized on first use)
 _client: Optional[redis.Redis] = None
@@ -86,7 +87,20 @@ async def get_schedule_cache() -> dict | None:
         return None
     return json.loads(data)
 
+
 async def set_schedule_cache(data: dict, ttl_seconds: int = 43200) -> None:
     client = await get_client()
 
     await client.set(SCHEDULE_KEY, json.dumps(data), ex = ttl_seconds)
+
+
+async def get_heartbeat() -> bool:
+    client = await get_client()
+
+    data = await client.get(HEARTBEAT_KEY)
+    return data is not None
+
+
+async def set_heartbeat(ttl_seconds: int = 10) -> None:
+    client = await get_client()
+    await client.set(HEARTBEAT_KEY, "ok", ex=ttl_seconds)

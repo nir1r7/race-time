@@ -34,9 +34,35 @@ async def health():
     Returns Redis connectivity status.
     """
     redis_ok = await redis_store.ping()
+
+    if not redis_ok:
+        return {"status": "degraded", "redis": "down", "heartbeat": "unknown"}
+
+
+    heart_ok = await redis_store.get_heartbeat()
+
+    latest = await redis_store.get_latest_snapshot()
+    stale = False
+
+    if latest:
+        try:
+            snap_time = datetime.fromisoformat(latest["timestamp"])
+            age_seconds = (datetime.now(timezone.utc) - snap_time).total_seconds()
+            stale = age_seconds > 20
+        except (KeyError, ValueError):
+            stale = True
+
+    if stale:
+        status = "stale"
+    elif not heart_ok:
+        status = "degraded"
+    else:
+        status = "ok"
+
     return {
-        "status": "ok" if redis_ok else "degraded",
-        "redis": "ok" if redis_ok else "down",
+        "status": status,
+        "redis": "ok",
+        "heartbeat": "ok" if heart_ok else "missing",
     }
 
 

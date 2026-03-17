@@ -170,8 +170,8 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [x] Wire MQTT credentials into `mqtt_worker.py`
 - [x] REST bootstrap on startup (session, drivers, positions)
 - [ ] MQTT ingest with reconnect logic
-- [ ] `live:heartbeat` key with TTL
-- [ ] Staleness and heartbeat checks in `/api/health`
+- [x] `live:heartbeat` key with TTL
+- [x] Staleness and heartbeat checks in `/api/health`
 - [x] No-active-session handling
 
 ## Phase 1 Manual Verification

@@ -134,6 +134,7 @@ async def _run_mqtt_session(token):
                     try:
                         snapshot = await _assemble_snapshot()
                         await redis_store.set_snapshot(snapshot.model_dump())
+                        await redis_store.set_heartbeat()
                     except Exception:
                         logger.exception("Failed to assemble snapshot")
             elif (topic == "v1/laps"):
