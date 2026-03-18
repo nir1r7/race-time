@@ -1,2 +1,28 @@
-# poller.yaml
-# TODO: Deployment (replicas=1)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poller
+  template:
+    metadata:
+      labels:
+        app: poller
+    spec:
+      containers:
+        - name: poller
+          image: race-time/api:latest
+          imagePullPolicy: Never
+          command: ["/app/entrypoint-poller.sh"]
+          env:
+            - name: REDIS_URL
+              value: "redis://redis:6379/0"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: POLL_INTERVAL_SECONDS
+              value: "1.25"
+            - name: CIRCUIT_SVG_PATH
+              value: "/data/circuits/svgs/Monte_Carlo_22.svg"
