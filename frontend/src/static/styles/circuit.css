@@ -37,3 +37,11 @@
   transition: left 0.25s linear, top 0.25s linear;
   will-change: left, top;
 }
+
+.circuit-trail-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  transition: left 0.25s linear, top 0.25s linear;
+}

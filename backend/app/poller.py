@@ -8,6 +8,7 @@ import logging
 import signal
 from datetime import datetime, timezone
 from typing import Dict, Optional
+from collections import deque
 import random as rand
 
 from app import redis_store
@@ -63,14 +64,19 @@ DUMMY_COMPOUNDS = ["S", "M", "H"]
 STINT_MIN_TICKS = 200
 STINT_MAX_TICKS = 500
 
+MAX_TRAIL_LEN = 6
+
 _shutdown = False
 
-# In-memory state: driver_number -> t (lap progress, 0.0 to 1.0)
+# In-memory state: driver_number, t (lap progress, 0.0 to 1.0)
 _driver_state: Dict[int, float] = {}
 
 # Tire stint state: compound per driver, ticks remaining in current stint
 _driver_tires: Dict[int, str] = {}
 _driver_stint_ticks: Dict[int, int] = {}
+
+# driver, last 6 (x, y) positions
+_driver_trail: Dict[int, deque] = {}
 
 # Circuit path — loaded once from SVG on first use
 _circuit_path: Optional[CircuitPath] = None
@@ -90,7 +96,7 @@ def _utc_now_iso() -> str:
 
 def _init_state_if_needed() -> None:
     """Initialize driver t values, tire stints, and load the circuit path from SVG."""
-    global _driver_state, _driver_tires, _driver_stint_ticks, _circuit_path
+    global _driver_state, _driver_tires, _driver_stint_ticks, _circuit_path, _driver_trail
     if _driver_state:
         return
 
@@ -98,6 +104,7 @@ def _init_state_if_needed() -> None:
         _driver_state[num] = idx / len(DUMMY_DRIVERS)
         _driver_tires[num] = rand.choice(DUMMY_COMPOUNDS)
         _driver_stint_ticks[num] = rand.randint(STINT_MIN_TICKS, STINT_MAX_TICKS)
+        _driver_trail[num] = deque(maxlen=MAX_TRAIL_LEN)
 
     logger.info("Loading circuit SVG from: %s", CIRCUIT_SVG_PATH)
     _circuit_path = CircuitPath(CIRCUIT_SVG_PATH)
@@ -132,6 +139,7 @@ def _generate_dummy_snapshot() -> Snapshot:
                 driver_code=code,
                 x_norm=round(x, 4),
                 y_norm=round(y, 4),
+                trail=list(_driver_trail[num]),
             )
         )
 

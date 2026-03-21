@@ -26,9 +26,27 @@ function Circuit({ positions, leaderboard, driverColours, activeCircuit }: Props
                 alt={circuit.name}
             />
             {positions.map((p) => {
-                const team = teamByDriver.get(p.driver_code);
                 const color = driverColours.get(p.driver_code) ?? "#fff";
-                return (
+                const pastPoints = (p.trail ?? []).slice(0, -1);
+                return [
+                    ...pastPoints.map(([x, y], i) => {
+                        const progress = (i + 1) / pastPoints.length;
+                        const size = 6 + progress * 8;
+                        return (
+                            <div
+                                key={`trail-${p.driver_number}-${i}`}
+                                className="circuit-trail-dot"
+                                style={{
+                                    left: `${x * 100}%`,
+                                    top: `${(1 - y) * 100}%`,
+                                    backgroundColor: color,
+                                    opacity: progress * 0.55,
+                                    width: `${size}px`,
+                                    height: `${size}px`,
+                                }}
+                            />
+                        );
+                    }),
                     <div
                         key={p.driver_number}
                         className="circuit-dot"
@@ -40,8 +58,8 @@ function Circuit({ positions, leaderboard, driverColours, activeCircuit }: Props
                         }}
                     >
                         {p.driver_code}
-                    </div>
-                );
+                    </div>,
+                ];
             })}
         </div>
     );

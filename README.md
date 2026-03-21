@@ -154,8 +154,8 @@ On every `v1/location` message (~3.7 Hz), the worker assembles a `Snapshot` and 
 - [x] Docker Compose `premium` profile for `mqtt-worker` service
 
 ### Phase 4 — Kubernetes deployment
-- [ ] K8s manifests for all services
-- [ ] Traefik ingress routing
+- [x] K8s manifests for all services
+- [x] Traefik ingress routing
 
 ### Phase 5 — CI/CD pipeline
 - [ ] GitHub Actions workflows
