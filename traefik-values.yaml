@@ -1,0 +1,19 @@
+deployment:
+  kind: DaemonSet
+
+service:
+  type: ClusterIP
+
+ports:
+  web:
+    hostPort: 80
+  websecure:
+    hostPort: 443
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Equal
+    effect: NoSchedule
+
+nodeSelector:
+  ingress-ready: "true"

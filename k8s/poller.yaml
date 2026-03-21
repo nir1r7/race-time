@@ -26,3 +26,18 @@ spec:
               value: "1.25"
             - name: CIRCUIT_SVG_PATH
               value: "/data/circuits/svgs/Monte_Carlo_22.svg"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+          volumeMounts:
+            - name: circuit-svgs
+              mountPath: /data/circuits/svgs
+              readOnly: true
+      volumes:
+        - name: circuit-svgs
+          configMap:
+            name: circuit-svgs
