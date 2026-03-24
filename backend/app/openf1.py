@@ -1,7 +1,8 @@
-import httpx
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
-from app.config import OPENF1_USERNAME, OPENF1_PASSWORD
+import httpx
+
+from app.config import OPENF1_PASSWORD, OPENF1_USERNAME
 
 
 async def get_token() -> tuple[str, datetime]:
@@ -20,7 +21,7 @@ async def get_token() -> tuple[str, datetime]:
         expires_in = int(data["expires_in"])
         expiry_time = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
         return token, expiry_time
-    
+
 
 async def fetch_latest_session(token: str) -> list[dict]:
     async with httpx.AsyncClient() as client:
