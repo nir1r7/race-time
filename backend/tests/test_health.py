@@ -13,9 +13,14 @@ def client():
 
 
 def test_health_redis_ok(client):
-    """Test health endpoint returns ok when Redis is connected."""
+    """Test health endpoint returns ok when Redis is connected, heartbeat is fresh, and data is recent."""
+    from datetime import datetime, timezone
+
+    mock_snapshot = {"timestamp": datetime.now(timezone.utc).isoformat(), "positions": []}
     with patch("app.routes.redis_store") as mock_redis:
         mock_redis.ping = AsyncMock(return_value=True)
+        mock_redis.get_heartbeat = AsyncMock(return_value=True)
+        mock_redis.get_latest_snapshot = AsyncMock(return_value=mock_snapshot)
         response = client.get("/api/health")
         assert response.status_code == 200
         data = response.json()

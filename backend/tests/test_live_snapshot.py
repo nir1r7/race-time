@@ -1,6 +1,7 @@
-"""Tests for /api/live/snapshot endpoint."""
+"""Tests for /api/live/stream SSE endpoint."""
+import json
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -12,34 +13,32 @@ def client():
     return TestClient(app)
 
 
-def test_live_snapshot_no_data(client):
-    """Test snapshot endpoint returns 503 when no data exists."""
-    with patch("app.routes.redis_store") as mock_redis:
-        mock_redis.get_snapshot = AsyncMock(return_value=None)
-        response = client.get("/api/live/snapshot")
-        assert response.status_code == 503
-        data = response.json()
-        assert data["error"] == "no snapshot yet"
+def test_live_stream_returns_event_stream(client):
+    """SSE endpoint returns 200 with text/event-stream content-type."""
+    async def _one_shot():
+        yield "data: {}\n\n"
+
+    with patch("app.routes.queue_generator", return_value=_one_shot()):
+        response = client.get("/api/live/stream")
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers["content-type"]
 
 
-def test_live_snapshot_with_data(client):
-    """Test snapshot endpoint returns data when available."""
+def test_live_stream_sends_sse_events(client):
+    """SSE events are formatted as 'data: <json>\\n\\n' and carry valid snapshot JSON."""
     mock_snapshot = {
         "timestamp": "2024-01-01T12:00:00Z",
-        "positions": [
-            {"driver_number": 1, "driver_code": "VER", "x_norm": 0.5, "y_norm": 0.5}
-        ],
-        "leaderboard": [
-            {"position": 1, "driver_number": 1, "driver_code": "VER"}
-        ],
-        "session": {"session_key": None, "name": "Race", "circuit": "Monaco"}
+        "positions": [],
+        "leaderboard": [],
+        "session": {"session_key": None, "name": "Race", "circuit": "Monaco"},
     }
-    with patch("app.routes.redis_store") as mock_redis:
-        mock_redis.get_snapshot = AsyncMock(return_value=mock_snapshot)
-        response = client.get("/api/live/snapshot")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["timestamp"] == "2024-01-01T12:00:00Z"
-        assert len(data["positions"]) == 1
-        assert data["positions"][0]["driver_code"] == "VER"
-        assert len(data["leaderboard"]) == 1
+
+    async def _one_shot():
+        yield f"data: {json.dumps(mock_snapshot)}\n\n"
+
+    with patch("app.routes.queue_generator", return_value=_one_shot()):
+        response = client.get("/api/live/stream")
+        first_line = response.text.splitlines()[0]
+        assert first_line.startswith("data: ")
+        payload = json.loads(first_line[len("data: "):])
+        assert payload["timestamp"] == "2024-01-01T12:00:00Z"

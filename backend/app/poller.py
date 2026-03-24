@@ -133,6 +133,7 @@ def _generate_dummy_snapshot() -> Snapshot:
             _driver_stint_ticks[num] = rand.randint(STINT_MIN_TICKS, STINT_MAX_TICKS)
 
         x, y = _circuit_path.t_to_xy(t)
+        _driver_trail[num].append((round(x, 4), round(y, 4)))
         positions.append(
             DriverPosition(
                 driver_number=num,

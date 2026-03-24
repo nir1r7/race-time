@@ -1,5 +1,6 @@
 import aiomqtt
 import asyncio
+from collections import deque
 import json
 import logging
 import ssl
@@ -28,10 +29,13 @@ def _normalize_compound(raw: str | None) -> str:
     return COMPOUND_MAP.get(raw.upper(), raw[0].upper())
 
 
+MAX_TRAIL_LEN = 6
+
 _positions: dict[int, dict] = {}
 _laps: dict[int, dict] = {}
 _drivers: dict[int, dict] = {}
 _session: dict = {}
+_driver_trail: dict[int, deque] = {}
 _last_snapshot_time: float = 0.0
 
 # seconds - max 2Hz
@@ -83,6 +87,7 @@ async def _assemble_snapshot() -> Snapshot:
             driver_code = driver.get("name_acronym") or "UNK",
             x_norm = x_norm,
             y_norm = y_norm,
+            trail = list(_driver_trail.get(num, deque())),
         ))
 
         leaderboard_list.append(LeaderboardEntry(
@@ -129,6 +134,14 @@ async def _run_mqtt_session(token):
             if (topic == "v1/location"):
                 if driver_num is not None:
                     _positions[driver_num] = payload
+                    raw_x = payload.get("x")
+                    raw_y = payload.get("y")
+                    if raw_x is not None and raw_y is not None:
+                        circuit_key = str(_session.get("circuit_key", ""))
+                        x_norm, y_norm = normalize(circuit_key, raw_x, raw_y)
+                        if driver_num not in _driver_trail:
+                            _driver_trail[driver_num] = deque(maxlen=MAX_TRAIL_LEN)
+                        _driver_trail[driver_num].append((round(x_norm, 4), round(y_norm, 4)))
                 loop = asyncio.get_running_loop()
                 now_ts = loop.time()
                 if now_ts - _last_snapshot_time >= SNAPSHOT_INTERVAL:
