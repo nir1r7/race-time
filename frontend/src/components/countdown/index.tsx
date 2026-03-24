@@ -1,10 +1,11 @@
 type Props = {
     targetDate: string;
     raceName: string;
+    now: number;
 };
 
-function Countdown({ targetDate, raceName }: Props) {
-    const remaining = Math.max(0, new Date(targetDate).getTime() - Date.now());
+function Countdown({ targetDate, raceName, now }: Props) {
+    const remaining = Math.max(0, new Date(targetDate).getTime() - now);
 
     const totalSeconds = Math.floor(remaining / 1000);
     const days = Math.floor(totalSeconds / 86400);

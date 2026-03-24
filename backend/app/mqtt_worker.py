@@ -1,17 +1,24 @@
-import aiomqtt
 import asyncio
-from collections import deque
 import json
 import logging
-import ssl
-from datetime import datetime, timezone, timedelta
 import signal
+import ssl
+from collections import deque
+from datetime import datetime, timedelta, timezone
+
+import aiomqtt
 
 from app import redis_store
-from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, Snapshot
 from app.circuit_bounds import normalize
-from app.config import OPENF1_USERNAME, OPENF1_PASSWORD, MQTT_HOST, MQTT_PORT
-from app.openf1 import get_token, fetch_latest_session, fetch_latest_positions, fetch_drivers, fetch_latest_laps
+from app.config import MQTT_HOST, MQTT_PORT, OPENF1_USERNAME
+from app.openf1 import (
+    fetch_drivers,
+    fetch_latest_laps,
+    fetch_latest_positions,
+    fetch_latest_session,
+    get_token,
+)
+from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, Snapshot
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,7 +46,7 @@ _driver_trail: dict[int, deque] = {}
 _last_snapshot_time: float = 0.0
 
 # seconds - max 2Hz
-SNAPSHOT_INTERVAL = 0.5  
+SNAPSHOT_INTERVAL = 0.5
 
 # test with values from 0.1 to 2
 DEFAULT_DELAY = 0.1

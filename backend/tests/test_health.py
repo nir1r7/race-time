@@ -1,9 +1,9 @@
 """Tests for /api/health endpoint."""
-import pytest
 from unittest.mock import AsyncMock, patch
-from fastapi.testclient import TestClient
 
+import pytest
 from app.main import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

@@ -1,16 +1,15 @@
 """API routes for RaceTime."""
+import asyncio
+import json
+from datetime import datetime, timedelta, timezone
+
+import httpx
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from app import redis_store
-from app.openf1 import fetch_next_race, get_token, fetch_drivers
-from app.interpolator import fit_splines, interpolate_snapshot, MIN_SNAPSHOTS, WINDOW_SIZE
-
-import httpx
-import json
-import asyncio
-from datetime import datetime, timezone, timedelta
-
+from app.interpolator import MIN_SNAPSHOTS, WINDOW_SIZE, fit_splines, interpolate_snapshot
+from app.openf1 import fetch_drivers, fetch_next_race, get_token
 
 router = APIRouter(prefix="/api")
 
@@ -84,7 +83,7 @@ async def queue_generator():
     trail_state: dict = {}
 
     backfill_start = max(fit.safe_end - (QUEUE_DEPTH-1)*OUTPUT_INTERVAL, fit.safe_start)
-    
+
     t = backfill_start
     while t <= fit.safe_end + 1e-9:
         snap = interpolate_snapshot(fit, t, trail_state)
@@ -103,7 +102,7 @@ async def queue_generator():
             if latest and latest["timestamp"] != last_seen_ts:
                 last_seen_ts = latest["timestamp"]
                 new_window = await redis_store.get_last_n_snapshots(WINDOW_SIZE)
-                
+
                 if len(new_window) >= MIN_SNAPSHOTS:
                     fit = fit_splines(new_window)
 
@@ -114,7 +113,7 @@ async def queue_generator():
             # stall if output is caught up to safe boundary
             if output_t > fit.safe_end:
                 continue
-            
+
             snap = interpolate_snapshot(fit, output_t, trail_state)
             yield f"data: {json.dumps(snap)}\n\n"
             output_t += OUTPUT_INTERVAL
@@ -125,8 +124,6 @@ async def queue_generator():
 
 @router.get("/live/stream")
 async def live_stream(request: Request):
-    last_id = request.headers.get("last-event-id")
-
     return StreamingResponse(
         queue_generator(),
         media_type = "text/event-stream",

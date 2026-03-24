@@ -1,10 +1,10 @@
 """Tests for /api/live/stream SSE endpoint."""
 import json
-import pytest
 from unittest.mock import patch
-from fastapi.testclient import TestClient
 
+import pytest
 from app.main import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

@@ -17,12 +17,12 @@ export default function App() {
   const [driverColours, setDriverColours] = useState<Map<string, string>>(new Map());
   const [nextRace, setNextRace] = useState<{ circuit_short_name: string; date_start: string; session_name: string; is_live: boolean } | null>(null);
   const [activeCircuit, setActiveCircuit] = useState<CircuitKey | null>(null);
-  const [countdown, setCountdown] = useState<number>(0); // ms remaining
+  const [now, setNow] = useState<number>(() => Date.now());
   const [bufferCount, setBufferCount] = useState<number>(15);
 
   const snapshotQueue = useRef<Snapshot[]>([]);
 
-  const isStale = snapshot !== null && Date.now() - new Date(snapshot.timestamp).getTime() > 15000;
+  const isStale = snapshot !== null && now - new Date(snapshot.timestamp).getTime() > 15000;
 
   const INTERVAL_TIME = 250;
   const QUEUE_DEPTH = 15;
@@ -54,22 +54,19 @@ export default function App() {
     .catch(() => {});
   }, [])
 
+  // Tick every second so isStale and Countdown stay accurate
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Auto-start when the scheduled race time arrives
   useEffect(() => {
     if (!nextRace || isLive) return;
-
-    const tick = () => {
-      const remaining = new Date(nextRace.date_start).getTime() - Date.now();
-      if (remaining <= 0){
-        setIsLive(true)
-        return;
-      }
-      setCountdown(remaining)
-    };
-
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [nextRace, isLive]);
+    if (now >= new Date(nextRace.date_start).getTime()) {
+      setIsLive(true);
+    }
+  }, [now, nextRace, isLive]);
 
   useEffect(() => {
     if (!isLive) {
@@ -165,7 +162,7 @@ export default function App() {
       </div>
 
       {!isLive && nextRace && (
-        <Countdown targetDate={nextRace.date_start} raceName={nextRace.circuit_short_name} />
+        <Countdown targetDate={nextRace.date_start} raceName={nextRace.circuit_short_name} now={now} />
       )}
 
       {isLive && !error && !loading && snapshot && (
@@ -174,7 +171,7 @@ export default function App() {
             <Leaderboard entries={snapshot.leaderboard} driverColours={driverColours} raceName={snapshot.session?.circuit ?? "Race"}/>
           </div>
           <div className="live-layout__circuit">
-            <Circuit positions={snapshot.positions} leaderboard={snapshot.leaderboard} driverColours={driverColours} activeCircuit={activeCircuit}/>
+            <Circuit positions={snapshot.positions} driverColours={driverColours} activeCircuit={activeCircuit}/>
           </div>
         </div>
       )}

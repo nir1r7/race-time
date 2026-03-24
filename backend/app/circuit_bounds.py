@@ -13,7 +13,7 @@ def normalize(circuit_key, x, y) :
     scale = data[str(circuit_key)]["scale"]
     x_offset = data[str(circuit_key)]["x_offset"]
     y_offset = data[str(circuit_key)]["y_offset"]
-    
+
     x_norm = ((x - x_min) * scale + x_offset) / 1000
     y_norm = ((y_max - y) * scale + y_offset) / 1000
 

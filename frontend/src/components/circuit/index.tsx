@@ -1,22 +1,17 @@
 import { ACTIVE_CIRCUIT } from "../../circuit-config";
 import { CIRCUITS, CircuitKey } from "../../circuits";
-import { DriverPosition, LeaderBoardEntry } from "../../types";
+import { DriverPosition } from "../../types";
 // import { TEAM_COLORS } from "../../teamColors";
 import "../../static/styles/circuit.css";
 
 type Props = {
     positions: DriverPosition[];
-    leaderboard: LeaderBoardEntry[];
     driverColours: Map<string, string>;
     activeCircuit: CircuitKey | null;
 };
 
-function Circuit({ positions, leaderboard, driverColours, activeCircuit }: Props) {
+function Circuit({ positions, driverColours, activeCircuit }: Props) {
     const circuit =  CIRCUITS[activeCircuit ?? ACTIVE_CIRCUIT];
-
-    const teamByDriver = new Map<string, string>(
-        leaderboard.map((e) => [e.driver_code, e.team])
-    );
 
     return (
         <div className="circuit-track">

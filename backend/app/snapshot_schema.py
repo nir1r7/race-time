@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+
 # Backend data models for requests and responses
 class DriverPosition(BaseModel):
     """Driver position on track (normalized 0-1 coordinates)."""

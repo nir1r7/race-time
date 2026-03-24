@@ -1,7 +1,7 @@
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from dataclasses import dataclass, field
+
 import numpy as np
-import json
 
 LAG = 1
 WINDOW_SIZE = 8
@@ -43,12 +43,9 @@ def _fit_natural_cubic_spline(t: np.ndarray, x: np.ndarray) -> np.ndarray:
     # not enough points
     if n < 3:
         return np.zeros(n)
-    
+
     # h[i] = t[i+1] - t[i]
     h = np.diff(t)
-
-    # number of interior unkonwn 2nd derivatives
-    n_int = n - 2
 
     # tridiagonal matrix entires
     main_diag = 2.0 * (h[:-1] + h[1:])
@@ -66,7 +63,7 @@ def _fit_natural_cubic_spline(t: np.ndarray, x: np.ndarray) -> np.ndarray:
     # assemble full array
     m = np.zeros(n)
     m[1:-1] = m_interior
-    
+
     return m
 
 
@@ -87,11 +84,11 @@ def evaluate_spline(spline: DriverSpline, t: float) -> tuple[float, float]:
 
     def eval_coord(vals, m):
         return a*vals[i] + b*vals[i + 1] + ((a**3 - a)*m[i] + (b**3 - b)*m[i + 1])*h_i**2 / 6.0
-    
+
     x = eval_coord(spline.x_vals, spline.mx)
     y = eval_coord(spline.y_vals, spline.my)
 
-    # Round to valid coordinate range 
+    # Round to valid coordinate range
     x = round(max(0.0, min(1.0, x)), 6)
     y = round(max(0.0, min(1.0, y)), 6)
 

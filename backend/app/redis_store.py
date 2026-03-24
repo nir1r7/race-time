@@ -75,7 +75,7 @@ async def get_last_n_snapshots(n: int) -> list[dict]:
 
     if not snapshots:
         return []
-    
+
     return [json.loads(s) for s in snapshots]
 
 

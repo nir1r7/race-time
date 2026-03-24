@@ -5,11 +5,11 @@ Creates fake F1 snapshot data and writes to Redis every POLL_INTERVAL_SECONDS.
 
 import asyncio
 import logging
+import random as rand
 import signal
+from collections import deque
 from datetime import datetime, timezone
 from typing import Dict, Optional
-from collections import deque
-import random as rand
 
 from app import redis_store
 from app.circuit_path import CircuitPath
