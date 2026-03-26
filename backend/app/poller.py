@@ -7,11 +7,13 @@ import asyncio
 import logging
 import random as rand
 import signal
+import time
 from collections import deque
 from datetime import datetime, timezone
 from typing import Dict, Optional
 
 from app import redis_store
+from app.metrics import snapshot_generation_duration_seconds, snapshots_generated_total
 from app.circuit_path import CircuitPath
 from app.config import CIRCUIT_SVG_PATH, POLL_INTERVAL_SECONDS
 from app.snapshot_schema import DriverPosition, LeaderboardEntry, SessionInfo, Snapshot
@@ -186,8 +188,11 @@ async def poll_loop():
 
     while not _shutdown:
         try:
+            t0 = time.time()
             snapshot = _generate_dummy_snapshot()
             await redis_store.set_snapshot(snapshot.model_dump())
+            snapshot_generation_duration_seconds.observe(time.time() - t0)
+            snapshots_generated_total.inc()
             logger.info("Wrote snapshot (timestamp=%s)", snapshot.timestamp)
         except Exception as e:
             logger.exception("Error writing snapshot: %s", e)

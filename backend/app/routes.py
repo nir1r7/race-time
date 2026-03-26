@@ -4,11 +4,13 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import httpx
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app import redis_store
 from app.interpolator import MIN_SNAPSHOTS, WINDOW_SIZE, fit_splines, interpolate_snapshot
+from app.metrics import active_sse_connections
 from app.openf1 import fetch_drivers, fetch_next_race, get_token
 
 router = APIRouter(prefix="/api")
@@ -70,6 +72,7 @@ async def queue_generator():
     OUTPUT_INTERVAL = 0.2428
     POLL_SLEEP = 0.5
     MAX_CATCHUP_S = QUEUE_DEPTH*OUTPUT_INTERVAL
+    active_sse_connections.inc()
 
     # wait for the data
     while True:
@@ -119,6 +122,7 @@ async def queue_generator():
             output_t += OUTPUT_INTERVAL
 
     except asyncio.CancelledError:
+        active_sse_connections.dec()
         pass
 
 
@@ -179,3 +183,8 @@ async def schedule():
     if not next_race.get("is_live"):
         await redis_store.set_schedule_cache(next_race)
     return next_race
+
+
+@router.get("/metrics")
+async def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
