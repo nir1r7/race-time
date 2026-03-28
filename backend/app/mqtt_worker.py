@@ -120,6 +120,7 @@ async def _assemble_snapshot() -> Snapshot:
 
 
 async def _run_mqtt_session(token):
+    global _session
     global _last_snapshot_time
     async with aiomqtt.Client(
         hostname = MQTT_HOST,
@@ -166,7 +167,6 @@ async def _run_mqtt_session(token):
                 if driver_num is not None:
                     _drivers[driver_num] = payload
             elif (topic == "v1/sessions"):
-                global _session
                 _session = payload
 
 

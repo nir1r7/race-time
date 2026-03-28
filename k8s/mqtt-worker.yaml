@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mqtt-worker
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mqtt-worker
+  template:
+    metadata:
+      labels:
+        app: mqtt-worker
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: mqtt-worker
+          image: ghcr.io/yourname/race-time-api:sha-abc123
+          imagePullPolicy: IfNotPresent
+          command: ["/app/entrypoint-mqtt-worker.sh"]
+          env:
+            - name: REDIS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mqtt-worker-config
+                  key: redis_url
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: mqtt-worker-config
+                  key: log_level
+            - name: MQTT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: mqtt-worker-config
+                  key: mqtt_host
+            - name: MQTT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: mqtt-worker-config
+                  key: mqtt_port
+            - name: OPENF1_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: openf1-credentials
+                  key: username
+            - name: OPENF1_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: openf1-credentials
+                  key: password
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
