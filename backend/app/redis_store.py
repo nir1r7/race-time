@@ -11,6 +11,7 @@ from app.metrics import redis_operation_duration_seconds, redis_operations_total
 # Redis key for the live snapshot
 SNAPSHOT_KEY = "live:snapshots"
 SCHEDULE_KEY = "static:schedule"
+DRIVERS_KEY = "static:drivers"
 HEARTBEAT_KEY = "live:heartbeat"
 
 # Global client (initialized on first use)
@@ -107,7 +108,22 @@ async def get_schedule_cache() -> dict | None:
 async def set_schedule_cache(data: dict, ttl_seconds: int = 43200) -> None:
     client = await get_client()
 
-    await client.set(SCHEDULE_KEY, json.dumps(data), ex = ttl_seconds)
+    await client.set(SCHEDULE_KEY, json.dumps(data), ex=ttl_seconds)
+
+
+async def get_drivers_cache() -> list | None:
+    client = await get_client()
+
+    data = await client.get(DRIVERS_KEY)
+    if data is None:
+        return None
+    return json.loads(data)
+
+
+async def set_drivers_cache(data: list, ttl_seconds: int = 43200) -> None:
+    client = await get_client()
+
+    await client.set(DRIVERS_KEY, json.dumps(data), ex=ttl_seconds)
 
 
 async def get_heartbeat() -> bool:

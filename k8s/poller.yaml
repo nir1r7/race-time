@@ -17,6 +17,8 @@ spec:
           image: race-time/api:latest
           imagePullPolicy: Never
           command: ["/app/entrypoint-poller.sh"]
+          ports:
+            - containerPort: 8001
           env:
             - name: REDIS_URL
               value: "redis://redis:6379/0"
@@ -26,6 +28,8 @@ spec:
               value: "1.25"
             - name: CIRCUIT_SVG_PATH
               value: "/data/circuits/svgs/Monte_Carlo_22.svg"
+            - name: POLLER_METRICS_PORT
+              value: "8001"
           resources:
             requests:
               cpu: "50m"
@@ -41,3 +45,14 @@ spec:
         - name: circuit-svgs
           configMap:
             name: circuit-svgs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: poller
+spec:
+  selector:
+    app: poller
+  ports:
+    - port: 8001
+      targetPort: 8001

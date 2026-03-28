@@ -205,8 +205,15 @@ async def poll_loop():
 
 def main():
     """Entry point for the poller."""
+    import os
+    from prometheus_client import start_http_server
+
     signal.signal(signal.SIGINT, _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
+
+    metrics_port = int(os.getenv("POLLER_METRICS_PORT", "8001"))
+    start_http_server(metrics_port)
+    logger.info("Poller metrics server started on port %d", metrics_port)
 
     try:
         asyncio.run(poll_loop())

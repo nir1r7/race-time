@@ -42,9 +42,11 @@ data:
           "id": 1,
           "title": "Request Rate",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
           "targets": [
             {
+              "refId": "A",
               "expr": "rate(http_requests_total[5m])",
               "legendFormat": "{{method}} {{endpoint}} {{status}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
@@ -56,9 +58,11 @@ data:
           "id": 2,
           "title": "p95 Request Latency",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
           "targets": [
             {
+              "refId": "A",
               "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
               "legendFormat": "p95 {{endpoint}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
@@ -70,10 +74,12 @@ data:
           "id": 3,
           "title": "Active SSE Connections",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 0, "y": 8, "w": 6, "h": 4 },
           "targets": [
             {
-              "expr": "active_sse_connections",
+              "refId": "A",
+              "expr": "sum(active_sse_connections)",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
             }
           ],
@@ -93,10 +99,12 @@ data:
           "id": 4,
           "title": "Snapshots / sec",
           "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 6, "y": 8, "w": 6, "h": 4 },
           "targets": [
             {
-              "expr": "rate(snapshots_generated_total[1m])",
+              "refId": "A",
+              "expr": "rate(snapshots_generated_total{job=\"racetime-poller\"}[1m])",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
             }
           ],
@@ -106,10 +114,12 @@ data:
           "id": 5,
           "title": "Error Rate (5xx)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 12, "y": 8, "w": 12, "h": 4 },
           "targets": [
             {
-              "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+              "refId": "A",
+              "expr": "(rate(http_requests_total{status=~\"5..\"}[5m])) or vector(0)",
               "legendFormat": "{{endpoint}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
             }
@@ -120,9 +130,11 @@ data:
           "id": 6,
           "title": "Redis Operation Latency (p95)",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
           "targets": [
             {
+              "refId": "A",
               "expr": "histogram_quantile(0.95, rate(redis_operation_duration_seconds_bucket[5m]))",
               "legendFormat": "p95 {{operation}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
@@ -134,15 +146,90 @@ data:
           "id": 7,
           "title": "Redis Operations / sec",
           "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
           "targets": [
             {
+              "refId": "A",
               "expr": "rate(redis_operations_total[1m])",
               "legendFormat": "{{operation}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
             }
           ],
           "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 8,
+          "title": "Snapshot Age",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 20, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "snapshot_age_seconds{job=\"racetime-api\"}",
+              "datasource": { "type": "prometheus", "uid": "prometheus" }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": { "mode": "thresholds" },
+              "thresholds": { "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 5 },
+                { "color": "red", "value": 20 }
+              ]}
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "SSE Messages / sec",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 6, "y": 20, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "rate(sse_messages_sent_total[1m])",
+              "legendFormat": "messages/sec",
+              "datasource": { "type": "prometheus", "uid": "prometheus" }
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 10,
+          "title": "OpenF1 API p95 Latency",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 12, "y": 20, "w": 12, "h": 4 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "histogram_quantile(0.95, rate(openf1_api_request_duration_seconds_bucket[5m]))",
+              "legendFormat": "p95 {{endpoint}}",
+              "datasource": { "type": "prometheus", "uid": "prometheus" }
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "id": 11,
+          "title": "API Memory (RSS)",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "process_resident_memory_bytes{job=\"racetime-api\"}",
+              "legendFormat": "RSS",
+              "datasource": { "type": "prometheus", "uid": "prometheus" }
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" } }
         }
       ]
     }

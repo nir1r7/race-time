@@ -42,3 +42,20 @@ redis_operation_duration_seconds = Histogram(
     ["operation"],
     buckets=[0.0005, 0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25],
 )
+
+snapshot_age_seconds = Gauge(
+    "snapshot_age_seconds",
+    "Age of the most recently read snapshot in seconds",
+)
+
+sse_messages_sent_total = Counter(
+    "sse_messages_sent_total",
+    "Total SSE messages sent to clients",
+)
+
+openf1_api_request_duration_seconds = Histogram(
+    "openf1_api_request_duration_seconds",
+    "OpenF1 API HTTP request duration in seconds",
+    ["endpoint"],
+    buckets=[0.1, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 15.0],
+)

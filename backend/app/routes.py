@@ -1,6 +1,7 @@
 """API routes for RaceTime."""
 import asyncio
 import json
+import time
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -10,12 +11,16 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from app import redis_store
 from app.interpolator import MIN_SNAPSHOTS, WINDOW_SIZE, fit_splines, interpolate_snapshot
-from app.metrics import active_sse_connections
+from app.metrics import (
+    active_sse_connections,
+    openf1_api_request_duration_seconds,
+    snapshot_age_seconds,
+    sse_messages_sent_total,
+)
 from app.openf1 import fetch_drivers, fetch_next_race, get_token
 
 router = APIRouter(prefix="/api")
 
-_drivers_cache: list[dict] | None = None
 _token: str | None = None
 _token_expiry: datetime | None = None
 
@@ -50,6 +55,7 @@ async def health():
             snap_time = datetime.fromisoformat(latest["timestamp"])
             age_seconds = (datetime.now(timezone.utc) - snap_time).total_seconds()
             stale = age_seconds > 20
+            snapshot_age_seconds.set(age_seconds)
         except (KeyError, ValueError):
             stale = True
 
@@ -67,6 +73,12 @@ async def health():
     }
 
 
+@router.get("/health/live")
+async def health_live():
+    """Lightweight liveness probe — no Redis calls."""
+    return {"status": "ok"}
+
+
 async def queue_generator():
     QUEUE_DEPTH = 15
     OUTPUT_INTERVAL = 0.2428
@@ -74,29 +86,30 @@ async def queue_generator():
     MAX_CATCHUP_S = QUEUE_DEPTH*OUTPUT_INTERVAL
     active_sse_connections.inc()
 
-    # wait for the data
-    while True:
-        window = await redis_store.get_last_n_snapshots(WINDOW_SIZE)
-        if len(window) >= MIN_SNAPSHOTS:
-            break
-        await asyncio.sleep(POLL_SLEEP)
-
-    # backfill the queue
-    fit = fit_splines(window)
-    trail_state: dict = {}
-
-    backfill_start = max(fit.safe_end - (QUEUE_DEPTH-1)*OUTPUT_INTERVAL, fit.safe_start)
-
-    t = backfill_start
-    while t <= fit.safe_end + 1e-9:
-        snap = interpolate_snapshot(fit, t, trail_state)
-        yield f"data: {json.dumps(snap)}\n\n"
-        t += OUTPUT_INTERVAL
-
-    output_t = fit.safe_end + OUTPUT_INTERVAL
-    last_seen_ts = window[0]["timestamp"]
-
     try:
+        # wait for the data
+        while True:
+            window = await redis_store.get_last_n_snapshots(WINDOW_SIZE)
+            if len(window) >= MIN_SNAPSHOTS:
+                break
+            await asyncio.sleep(POLL_SLEEP)
+
+        # backfill the queue
+        fit = fit_splines(window)
+        trail_state: dict = {}
+
+        backfill_start = max(fit.safe_end - (QUEUE_DEPTH-1)*OUTPUT_INTERVAL, fit.safe_start)
+
+        t = backfill_start
+        while t <= fit.safe_end + 1e-9:
+            snap = interpolate_snapshot(fit, t, trail_state)
+            yield f"data: {json.dumps(snap)}\n\n"
+            sse_messages_sent_total.inc()
+            t += OUTPUT_INTERVAL
+
+        output_t = fit.safe_end + OUTPUT_INTERVAL
+        last_seen_ts = window[0]["timestamp"]
+
         while True:
             await asyncio.sleep(OUTPUT_INTERVAL)
 
@@ -119,11 +132,11 @@ async def queue_generator():
 
             snap = interpolate_snapshot(fit, output_t, trail_state)
             yield f"data: {json.dumps(snap)}\n\n"
+            sse_messages_sent_total.inc()
             output_t += OUTPUT_INTERVAL
 
-    except asyncio.CancelledError:
+    finally:
         active_sse_connections.dec()
-        pass
 
 
 @router.get("/live/stream")
@@ -140,18 +153,19 @@ async def live_stream(request: Request):
 
 @router.get("/drivers")
 async def drivers():
-    global _drivers_cache
-
-    if _drivers_cache is not None:
-        return _drivers_cache
+    cached = await redis_store.get_drivers_cache()
+    if cached is not None:
+        return cached
 
     try:
         token = await _get_api_token()
+        t0 = time.time()
         all_drivers = await fetch_drivers("latest", token)
+        openf1_api_request_duration_seconds.labels("drivers").observe(time.time() - t0)
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
         return JSONResponse(status_code=503, content={"detail": "OpenF1 API unavailable", "error": str(e)})
 
-    _drivers_cache = [
+    result = [
         {
             "driver_code": driver["name_acronym"],
             "team_name":   driver["team_name"],
@@ -160,7 +174,8 @@ async def drivers():
         for driver in all_drivers if driver.get("name_acronym") and driver.get("team_colour")
     ]
 
-    return _drivers_cache
+    await redis_store.set_drivers_cache(result)
+    return result
 
 
 @router.get("/schedule")
@@ -172,7 +187,9 @@ async def schedule():
 
     try:
         token = await _get_api_token()
+        t0 = time.time()
         next_race = await fetch_next_race(token)
+        openf1_api_request_duration_seconds.labels("schedule").observe(time.time() - t0)
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
         return JSONResponse(status_code=503, content={"detail": "OpenF1 API unavailable", "error": str(e)})
 

@@ -189,8 +189,8 @@ On `v1/location` messages, the worker assembles a `Snapshot` and pushes it to th
 - [ ] GHCR push with semantic tagging
 
 ### Phase 6 — Monitoring
-- [ ] Prometheus metrics collection
-- [ ] Grafana dashboards
+- [x] Prometheus metrics collection
+- [x] Grafana dashboards
 
 ### Phase 7 — Premium OpenF1 (mqtt-worker)
 - [x] Wire MQTT credentials into `mqtt_worker.py`

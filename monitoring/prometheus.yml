@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "racetime-api"
+    metrics_path: /api/metrics
+    static_configs:
+      - targets: ["api:8000"]
+
+  - job_name: "racetime-poller"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["poller:8001"]
