@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mqtt-worker-config
+data:
+  redis_url: "redis://redis:6379/0"
+  log_level: "info"
+  mqtt_host: "mqtt.openf1.org"
+  mqtt_port: "8883"

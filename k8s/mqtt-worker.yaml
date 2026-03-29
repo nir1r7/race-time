@@ -18,8 +18,8 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: mqtt-worker
-          image: ghcr.io/yourname/race-time-api:sha-abc123
-          imagePullPolicy: IfNotPresent
+          image: race-time/api:latest
+          imagePullPolicy: Never
           command: ["/app/entrypoint-mqtt-worker.sh"]
           env:
             - name: REDIS_URL
@@ -59,7 +59,3 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          securityContext:
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
