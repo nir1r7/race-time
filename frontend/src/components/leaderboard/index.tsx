@@ -43,12 +43,14 @@ function Leaderboard({ entries, driverColours, raceName }: Props) {
                                     </div>
                                 </td>
                                 <td className="lb-gap">
-                                    {entry.gap_to_leader == null ? (
-                                        "—"
-                                    ) : entry.gap_to_leader === 0 ? (
-                                        <span className="lb-gap--leader">LEADER</span>
+                                    {typeof entry.gap_to_leader === "number" && Number.isFinite(entry.gap_to_leader) ? (
+                                        entry.gap_to_leader === 0 ? (
+                                            <span className="lb-gap--leader">LEADER</span>
+                                        ) : (
+                                            `+${entry.gap_to_leader.toFixed(3)}`
+                                        )
                                     ) : (
-                                        `+${entry.gap_to_leader.toFixed(3)}`
+                                        "—"
                                     )}
                                 </td>
                                 <td className="lb-tyre">

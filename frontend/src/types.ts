@@ -11,7 +11,7 @@ export type LeaderBoardEntry = {
     driver_code: string;
     team: string;
     position: number;
-    gap_to_leader: number;
+    gap_to_leader: number | null;
     tire_compound: string;
 }
 

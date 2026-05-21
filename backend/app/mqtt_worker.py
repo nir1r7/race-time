@@ -13,6 +13,7 @@ from app.circuit_bounds import normalize
 from app.config import MQTT_HOST, MQTT_PORT, OPENF1_USERNAME
 from app.openf1 import (
     fetch_drivers,
+    fetch_latest_intervals,
     fetch_latest_laps,
     fetch_latest_positions,
     fetch_latest_session,
@@ -39,6 +40,7 @@ def _normalize_compound(raw: str | None) -> str:
 MAX_TRAIL_LEN = 6
 
 _positions: dict[int, dict] = {}
+_intervals: dict[int, dict] = {}
 _laps: dict[int, dict] = {}
 _drivers: dict[int, dict] = {}
 _session: dict = {}
@@ -55,7 +57,7 @@ _shutdown = False
 
 
 async def _bootstrap(token) -> None:
-    global _session, _drivers, _positions, _laps
+    global _session, _drivers, _positions, _laps, _intervals
 
     sessions_list = await fetch_latest_session(token)
     _session = sessions_list[0]
@@ -69,13 +71,63 @@ async def _bootstrap(token) -> None:
     laps_list = await fetch_latest_laps(_session["session_key"], token)
     _laps = {lap["driver_number"]: lap for lap in laps_list}
 
+    intervals_list = await fetch_latest_intervals(_session["session_key"], token)
+    _intervals = {
+        interval["driver_number"]: interval
+        for interval in intervals_list
+        if interval.get("driver_number") is not None
+    }
+
+
+def _safe_int(value) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_float(value) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_gap(value) -> tuple[float | None, bool]:
+    """Return (gap, is_lapped) where lap gaps are flagged and gap None."""
+    if value is None:
+        return None, False
+
+    if isinstance(value, (int, float)):
+        return float(value), False
+
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None, False
+
+        upper = s.upper()
+        if "LAP" in upper:
+            return None, True
+
+        if s.startswith("+"):
+            s = s[1:]
+
+        try:
+            return float(s), False
+        except ValueError:
+            return None, False
+
+    return None, False
+
 
 async def _assemble_snapshot() -> Snapshot:
     positions_list = []
     leaderboard_list = []
 
     circuit_key = str(_session.get("circuit_key", ""))
-
 
     for num, pos in _positions.items():
         raw_x = pos.get("x")
@@ -86,7 +138,6 @@ async def _assemble_snapshot() -> Snapshot:
 
         x_norm, y_norm = normalize(circuit_key, raw_x, raw_y)
 
-        lap = _laps.get(num, {})
         driver = _drivers.get(num, {})
 
         positions_list.append(DriverPosition(
@@ -97,15 +148,55 @@ async def _assemble_snapshot() -> Snapshot:
             trail = list(_driver_trail.get(num, deque())),
         ))
 
+    interval_entries: list[tuple[int, float | None, bool]] = []
+    for num, interval in _intervals.items():
+        gap_val, is_lapped = _parse_gap(interval.get("gap_to_leader"))
+        if gap_val is None:
+            alt_gap, alt_lapped = _parse_gap(interval.get("interval"))
+            if alt_gap is not None or alt_lapped:
+                gap_val, is_lapped = alt_gap, alt_lapped
+        interval_entries.append((num, gap_val, is_lapped))
+
+    # Order: leader first (gap 0), then finite gaps ascending, then lapped/unknown.
+    def _interval_sort_key(entry: tuple[int, float | None, bool]):
+        num, gap_val, is_lapped = entry
+        if gap_val is None:
+            return (2 if is_lapped else 3, float("inf"), num)
+        return (0, gap_val, num)
+
+    ordered_from_intervals = [num for num, _, _ in sorted(interval_entries, key=_interval_sort_key)]
+
+    lap_only = [n for n in _laps.keys() if n not in _intervals]
+    lap_only.sort(key=lambda n: (_safe_int(_laps.get(n, {}).get("position")) or 9999, n))
+
+    remaining = [n for n in _drivers.keys() if n not in _intervals and n not in _laps]
+    remaining.sort()
+
+    ordered_driver_numbers = ordered_from_intervals + lap_only + remaining
+
+    position_counter = 1
+    for num in ordered_driver_numbers:
+        driver = _drivers.get(num, {})
+        interval = _intervals.get(num, {})
+        lap = _laps.get(num, {})
+
+        gap_val, is_lapped = _parse_gap(interval.get("gap_to_leader") if interval else lap.get("gap_to_leader"))
+        if gap_val is None and interval:
+            alt_gap, alt_lapped = _parse_gap(interval.get("interval"))
+            if alt_gap is not None or alt_lapped:
+                gap_val, is_lapped = alt_gap, alt_lapped
+
+        if gap_val is None and position_counter == 1:
+            gap_val = 0.0
+
         leaderboard_list.append(LeaderboardEntry(
-            position = lap.get("position") or 1,
+            position = position_counter,
             driver_code = driver.get("name_acronym") or "UNK",
             team = driver.get("team_name") or "Unknown",
-            gap_to_leader = lap.get("gap_to_leader") or 0.0,
+            gap_to_leader = gap_val,
             tire_compound = _normalize_compound(lap.get("compound") or lap.get("tire_compound")),
         ))
-
-    leaderboard_list.sort(key=lambda e: e.position)
+        position_counter += 1
 
     return Snapshot(
         timestamp = datetime.now(timezone.utc).isoformat(),
@@ -130,6 +221,7 @@ async def _run_mqtt_session(token):
         tls_context = ssl.create_default_context(),
     ) as client:
         await client.subscribe("v1/location")
+        await client.subscribe("v1/intervals")
         await client.subscribe("v1/laps")
         await client.subscribe("v1/drivers")
         await client.subscribe("v1/sessions")
@@ -137,7 +229,7 @@ async def _run_mqtt_session(token):
         async for message in client.messages:
             topic = str(message.topic)
             payload = json.loads(message.payload)
-            driver_num = payload.get("driver_number")
+            driver_num = _safe_int(payload.get("driver_number"))
 
             if (topic == "v1/location"):
                 if driver_num is not None:
@@ -163,6 +255,9 @@ async def _run_mqtt_session(token):
             elif (topic == "v1/laps"):
                 if driver_num is not None:
                     _laps[driver_num] = payload
+            elif (topic == "v1/intervals"):
+                if driver_num is not None:
+                    _intervals[driver_num] = payload
             elif (topic == "v1/drivers"):
                 if driver_num is not None:
                     _drivers[driver_num] = payload

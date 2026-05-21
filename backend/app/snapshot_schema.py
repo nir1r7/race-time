@@ -21,7 +21,7 @@ class LeaderboardEntry(BaseModel):
     position: int
     driver_code: str
     team: str
-    gap_to_leader: float
+    gap_to_leader: Optional[float]
     tire_compound: str
 
 

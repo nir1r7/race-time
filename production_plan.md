@@ -131,3 +131,9 @@ kubectl scale deployment mqtt-worker --replicas=1
 ### mqqt worker to poller
 kubectl scale deployment mqtt-worker --replicas=0
 kubectl scale deployment poller --replicas=1
+
+
+## bugs
+- tired compounds not showing
+- leaderboard positions inconsistent
+- OpenF1 API p95 Latency in grafana not displaying data

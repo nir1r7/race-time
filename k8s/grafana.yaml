@@ -208,7 +208,7 @@ data:
           "targets": [
             {
               "refId": "A",
-              "expr": "histogram_quantile(0.95, rate(openf1_api_request_duration_seconds_bucket[5m]))",
+              "expr": "histogram_quantile(0.95, sum by (le, endpoint) (rate(openf1_api_request_duration_seconds_bucket[5m])))",
               "legendFormat": "p95 {{endpoint}}",
               "datasource": { "type": "prometheus", "uid": "prometheus" }
             }

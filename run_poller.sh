@@ -14,7 +14,7 @@ kind load docker-image race-time/frontend:latest --name racetime
 
 # Apply k8s manifests
 echo "Applying Kubernetes manifests..."
-kubectl apply -f k8s/
+kubectl apply --server-side -f k8s/
 
 # Ensure correct ingest mode
 echo "Switching to poller..."
